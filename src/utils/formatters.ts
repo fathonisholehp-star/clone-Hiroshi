@@ -92,7 +92,8 @@ export function createWhatsAppServiceUrl(
     (notes ? `📝 *Keterangan Teknisi:* ${notes}\n` : '') +
     `\n📢 *Informasi:* ${statusMsg}\n\n` +
     `📍 *Hiroshi Computer*\n` +
-    `Jl. Ahmad Yani No. 88, Komputer & IT Solution\n` +
+    `Jl. Tunggorono No 46 Pucangan Kartasura\n` +
+    `No. HP/WA: 085876500029\n` +
     `Terima kasih atas kepercayaan Anda!`;
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
@@ -124,11 +125,11 @@ export function exportToCsv(filename: string, headers: string[], rows: (string |
 }
 
 export const STORE_COORDINATES = {
-  lat: -6.2088,
-  lng: 106.8456,
+  lat: -7.5568,
+  lng: 110.7438,
   name: 'Toko Hiroshi Computer & IT Service',
-  address: 'Jl. Ahmad Yani No. 88',
-  maxAllowedRadiusMeters: 100, // Radius maksimal agar dianggap berada di area toko
+  address: 'Jl. Tunggorono No 46 Pucangan Kartasura',
+  maxAllowedRadiusMeters: 150, // Radius maksimal agar dianggap berada di area toko
 };
 
 export function calculateDistanceMeters(

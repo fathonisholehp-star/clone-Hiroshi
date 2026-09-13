@@ -76,6 +76,9 @@ export interface ServiceOrder {
   technician: string; // Teknisi
   diagnosis?: string;
   sparepartsUsed?: string;
+  accessories?: string; // Kelengkapan (Charger, Tas, Box, dll)
+  warranty?: string; // Garansi Service (e.g., "30 Hari")
+  downPayment?: number; // DP / Uang Muka
 }
 
 export type StockChangeType = 'MASUK' | 'KELUAR' | 'PENYESUAIAN' | 'PENJUALAN' | 'VOID_PENJUALAN';
@@ -118,8 +121,37 @@ export interface AttendanceRecord {
   status: AttendanceStatus;
 }
 
+export type PrinterType =
+  | 'thermal-58'
+  | 'thermal-80'
+  | 'dot-matrix'
+  | 'inkjet-a4'
+  | 'inkjet-a5';
+
+export interface ServicePrintSettings {
+  defaultPrinter: PrinterType;
+  copies?: number;
+  showStoreHeader: boolean;
+  showCustomerInfo: boolean;
+  showDeviceDetails: boolean;
+  showAccessories: boolean;
+  showEstimatedCost: boolean;
+  showSignatureSection: boolean;
+  showSignatures?: boolean;
+  showDiagnosis?: boolean;
+  showTerms: boolean;
+  termsText: string;
+  termsNote?: string;
+  warrantyText: string;
+  warrantyNote?: string;
+  showQrTracking: boolean;
+  autoPrintOnSave?: boolean;
+}
+
 export interface PrintSettings {
-  paperWidth: '58mm' | '80mm';
+  paperWidth: '58mm' | '80mm'; // Compatible with legacy
+  salesPrinterType: PrinterType;
+  servicePrinterType?: PrinterType;
   fontSize: 'small' | 'normal' | 'large'; // 11px, 12px, 13px
   showLogo: boolean;
   showStoreAddress: boolean;
@@ -131,6 +163,9 @@ export interface PrintSettings {
   footerNote1: string;
   footerNote2: string;
   autoPrintDialog: boolean;
+  printCopies: number; // 1 or 2
+  dotMatrixDraftFont: boolean;
+  servicePrintSettings: ServicePrintSettings;
 }
 
 export interface GeofenceSettings {

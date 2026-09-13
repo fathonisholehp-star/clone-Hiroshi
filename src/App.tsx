@@ -81,7 +81,32 @@ export default function App() {
 
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
     const saved = localStorage.getItem('hiroshi_store_settings');
-    return saved ? JSON.parse(saved) : INITIAL_STORE_SETTINGS;
+    if (!saved) return INITIAL_STORE_SETTINGS;
+    try {
+      const parsed = JSON.parse(saved);
+      // Migrate old default address / phone if needed
+      if (!parsed.address || parsed.address === 'Jl. Ahmad Yani No. 88') {
+        parsed.address = 'Jl. Tunggorono No 46 Pucangan';
+        parsed.city = 'Kartasura';
+      }
+      if (!parsed.phone || parsed.phone === '0812-3456-7890') {
+        parsed.phone = '085876500029';
+      }
+      return {
+        ...INITIAL_STORE_SETTINGS,
+        ...parsed,
+        printSettings: {
+          ...INITIAL_STORE_SETTINGS.printSettings,
+          ...(parsed.printSettings || {}),
+          servicePrintSettings: {
+            ...INITIAL_STORE_SETTINGS.printSettings.servicePrintSettings,
+            ...(parsed.printSettings?.servicePrintSettings || {}),
+          },
+        },
+      };
+    } catch {
+      return INITIAL_STORE_SETTINGS;
+    }
   });
 
   const [activeTab, setActiveTab] = useState<string>('kasir');
@@ -589,6 +614,7 @@ export default function App() {
           <ServiceTab
             services={services}
             currentUser={currentUser}
+            storeSettings={storeSettings}
             onSaveService={handleSaveService}
             onUpdateStatus={handleUpdateServiceStatus}
           />

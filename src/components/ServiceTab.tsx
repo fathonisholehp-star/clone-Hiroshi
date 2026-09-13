@@ -15,17 +15,22 @@ import {
   X,
   Check,
   ExternalLink,
+  Printer,
+  Package,
+  ShieldCheck,
 } from 'lucide-react';
-import { ServiceOrder, ServiceStatus, User } from '../types';
+import { ServiceOrder, ServiceStatus, User, StoreSettings } from '../types';
 import {
   formatCurrency,
   generateServiceId,
   createWhatsAppServiceUrl,
 } from '../utils/formatters';
+import ServiceReceiptModal from './ServiceReceiptModal';
 
 interface ServiceTabProps {
   services: ServiceOrder[];
   currentUser: User;
+  storeSettings?: StoreSettings;
   onSaveService: (order: ServiceOrder, isNew: boolean) => void;
   onUpdateStatus: (
     serviceId: string,
@@ -38,6 +43,7 @@ interface ServiceTabProps {
 export default function ServiceTab({
   services,
   currentUser,
+  storeSettings,
   onSaveService,
   onUpdateStatus,
 }: ServiceTabProps) {
@@ -45,6 +51,7 @@ export default function ServiceTab({
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<ServiceOrder | null>(null);
+  const [printReceiptOrder, setPrintReceiptOrder] = useState<ServiceOrder | null>(null);
 
   // Status update modal
   const [statusModalOrder, setStatusModalOrder] = useState<ServiceOrder | null>(null);
@@ -61,6 +68,9 @@ export default function ServiceTab({
     estimatedCost: 150000,
     technician: currentUser.fullName,
     status: 'Diterima',
+    accessories: '',
+    warranty: '30 Hari',
+    downPayment: 0,
   });
 
   const isTechnicianOrAdmin =
@@ -99,6 +109,9 @@ export default function ServiceTab({
       estimatedCost: 150000,
       technician: currentUser.fullName,
       status: 'Diterima',
+      accessories: '',
+      warranty: '30 Hari',
+      downPayment: 0,
     });
     setIsModalOpen(true);
   };
@@ -114,6 +127,7 @@ export default function ServiceTab({
       return;
     }
 
+    const isNew = !editingOrder;
     const orderToSave: ServiceOrder = {
       id: formData.id || generateServiceId(services.length),
       entryDate: formData.entryDate || new Date().toISOString(),
@@ -126,10 +140,18 @@ export default function ServiceTab({
       technician: formData.technician || currentUser.fullName,
       diagnosis: formData.diagnosis || '',
       sparepartsUsed: formData.sparepartsUsed || '',
+      accessories: formData.accessories?.trim() || '',
+      warranty: formData.warranty?.trim() || '30 Hari',
+      downPayment: Number(formData.downPayment || 0),
     };
 
-    onSaveService(orderToSave, !editingOrder);
+    onSaveService(orderToSave, isNew);
     setIsModalOpen(false);
+
+    // If new service ticket created, immediately offer printing intake receipt
+    if (isNew) {
+      setPrintReceiptOrder(orderToSave);
+    }
   };
 
   const handleOpenStatusModal = (order: ServiceOrder) => {
@@ -323,6 +345,15 @@ export default function ServiceTab({
                       </p>
                     </div>
 
+                    {order.accessories && (
+                      <div className="flex items-center gap-1.5 text-slate-700 bg-slate-50 p-1.5 rounded-md border border-slate-200/70">
+                        <Package className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        <span className="text-[11px] truncate">
+                          <strong>Kelengkapan:</strong> {order.accessories}
+                        </span>
+                      </div>
+                    )}
+
                     {order.diagnosis && (
                       <div>
                         <span className="text-gray-500 block mb-0.5">Diagnosa / Tindakan:</span>
@@ -334,14 +365,26 @@ export default function ServiceTab({
                   </div>
                 </div>
 
-                {/* Footer Controls: WhatsApp Trigger & Status Update */}
+                {/* Footer Controls: Print, WhatsApp Trigger & Status Update */}
                 <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                   <div className="text-[11px] text-gray-500 flex items-center gap-1">
                     <UserCheck className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{order.technician}</span>
+                    <span className="truncate max-w-[90px]">{order.technician}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    {/* Print Receipt / Handover Button */}
+                    <button
+                      id={`btn-print-service-${order.id}`}
+                      type="button"
+                      onClick={() => setPrintReceiptOrder(order)}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                      title="Cetak Tanda Terima / Nota Serah Terima Service (Thermal / A4 / A5 / Dot Matrix)"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Cetak Nota</span>
+                    </button>
+
                     {/* WhatsApp Notification Trigger Button */}
                     <a
                       id={`btn-wa-service-${order.id}`}
@@ -352,7 +395,7 @@ export default function ServiceTab({
                       title="Kirim notifikasi update status ke WhatsApp Pelanggan"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Kirim WA</span>
+                      <span className="hidden sm:inline">WA</span>
                     </a>
 
                     {/* Update Status Button */}
@@ -363,7 +406,7 @@ export default function ServiceTab({
                         className="px-2.5 py-1.5 rounded-lg bg-[#1E88E5] hover:bg-[#0D47A1] text-white text-xs font-semibold flex items-center gap-1 shadow-2xs transition-colors"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
-                        <span>Update Status</span>
+                        <span>Update</span>
                       </button>
                     )}
                   </div>
@@ -487,6 +530,57 @@ export default function ServiceTab({
                     onChange={(e) =>
                       setFormData({ ...formData, technician: e.target.value })
                     }
+                    className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Extra IT Service fields: Accessories & Warranty */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Kelengkapan Unit Bawaan (Wajib dicatat untuk keamanan)
+                </label>
+                <input
+                  type="text"
+                  value={formData.accessories || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, accessories: e.target.value })
+                  }
+                  placeholder="Contoh: Unit laptop + Charger adaptor ori + Tas ransel..."
+                  className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Uang Muka / DP (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.downPayment || 0}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        downPayment: Number(e.target.value),
+                      })
+                    }
+                    className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Garansi Service
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.warranty || '30 Hari'}
+                    onChange={(e) =>
+                      setFormData({ ...formData, warranty: e.target.value })
+                    }
+                    placeholder="Misal: 30 Hari / 14 Hari"
                     className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
                   />
                 </div>
@@ -617,6 +711,15 @@ export default function ServiceTab({
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL: PRINT NOTA & SERAH TERIMA SERVICE */}
+      {printReceiptOrder && (
+        <ServiceReceiptModal
+          order={printReceiptOrder}
+          storeSettings={storeSettings}
+          onClose={() => setPrintReceiptOrder(null)}
+        />
       )}
     </div>
   );

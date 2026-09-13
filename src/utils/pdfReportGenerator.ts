@@ -76,9 +76,9 @@ export function generateSalesReportPdf(
   // Store information
   const storeName = storeSettings?.storeName || 'HIROSHI COMPUTER';
   const tagline = storeSettings?.tagline || 'Toko Komputer, Part PC & Layanan Service IT';
-  const address = storeSettings?.address || 'Jl. Ahmad Yani No. 88, Komputer & IT Solution';
-  const city = storeSettings?.city || 'Jakarta Pusat';
-  const phone = storeSettings?.phone || '0812-3456-7890';
+  const address = storeSettings?.address || 'Jl. Tunggorono No 46 Pucangan';
+  const city = storeSettings?.city || 'Kartasura';
+  const phone = storeSettings?.phone || '085876500029';
   const email = storeSettings?.email || 'kontak@hiroshicomputer.com';
 
   const printedAt = new Date().toLocaleString('id-ID', {

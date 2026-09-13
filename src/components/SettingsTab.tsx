@@ -19,8 +19,12 @@ import {
   Navigation,
   Clock,
   Sparkles,
+  Wrench,
+  Package,
+  Layers,
+  FileCheck,
 } from 'lucide-react';
-import { StoreSettings, User } from '../types';
+import { StoreSettings, User, PrinterType, ServicePrintSettings } from '../types';
 import { INITIAL_STORE_SETTINGS } from '../data/initialData';
 import { formatCurrency } from '../utils/formatters';
 
@@ -41,6 +45,11 @@ export default function SettingsTab({
   const [formData, setFormData] = useState<StoreSettings>(settings);
   const [activeSubSection, setActiveSubSection] = useState<'theme' | 'profile' | 'print' | 'geofence'>(
     'theme'
+  );
+  const [printCategoryTab, setPrintCategoryTab] = useState<'sales' | 'service'>('sales');
+  const [previewDocType, setPreviewDocType] = useState<'sales' | 'service'>('sales');
+  const [previewPrinter, setPreviewPrinter] = useState<PrinterType>(
+    settings.printSettings.salesPrinterType || 'thermal-58'
   );
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [locationFeedback, setLocationFeedback] = useState<string | null>(null);
@@ -77,6 +86,24 @@ export default function SettingsTab({
       printSettings: {
         ...prev.printSettings,
         [field]: value,
+      },
+    }));
+  };
+
+  // Handle Service-Specific Print Settings Changes
+  const handleServicePrintChange = (
+    field: keyof ServicePrintSettings,
+    value: any
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      printSettings: {
+        ...prev.printSettings,
+        servicePrintSettings: {
+          ...INITIAL_STORE_SETTINGS.printSettings.servicePrintSettings,
+          ...(prev.printSettings.servicePrintSettings || {}),
+          [field]: value,
+        },
       },
     }));
   };
@@ -643,226 +670,549 @@ export default function SettingsTab({
               </div>
             )}
 
-            {/* SECTION 2: PENGATURAN CETAK STRUK */}
+            {/* SECTION 2: PENGATURAN CETAK STRUK & SERAH TERIMA SERVICE */}
             {activeSubSection === 'print' && (
-              <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-xs space-y-5">
-                <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+              <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-xs space-y-6">
+                <div className="border-b border-gray-100 pb-3 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                      <Printer className="w-4 h-4 text-[#1E88E5]" />
-                      Format Struk Kasir (Printer Thermal &amp; PDF)
+                      <Printer className="w-5 h-5 text-[#1E88E5]" />
+                      <span>Konfigurasi Printer Penjualan &amp; Serah Terima Service</span>
                     </h2>
                     <p className="text-xs text-gray-500">
-                      Sesuaikan ukuran kertas, ukuran huruf, logo, serta catatan garansi pada bukti
-                      pembelian.
+                      Sesuaikan berbagai macam printer (Thermal 58/80mm, Dot Matrix NCR, atau Inkjet A4/A5)
+                      untuk nota kasir dan tanda terima service.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleTestPrint}
-                    className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                   >
-                    <Printer className="w-3.5 h-3.5" />
+                    <Printer className="w-3.5 h-3.5 text-blue-400" />
                     <span>Cetak Uji Coba</span>
                   </button>
                 </div>
 
-                {/* Ukuran Kertas & Font */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Paper Width */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Lebar Kertas Thermal
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handlePrintChange('paperWidth', '58mm')}
-                        className={`py-2 px-3 rounded-lg text-xs font-bold border flex flex-col items-center justify-center gap-1 transition-all ${
-                          formData.printSettings.paperWidth === '58mm'
-                            ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#0D47A1] shadow-xs'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        <span>58 mm</span>
-                        <span className="text-[10px] text-gray-400 font-normal">Mini Thermal POS</span>
-                      </button>
+                {/* Sub-Tabs: Penjualan vs Service */}
+                <div className="flex border-b border-gray-200 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrintCategoryTab('sales');
+                      setPreviewDocType('sales');
+                      setPreviewPrinter(formData.printSettings.salesPrinterType || 'thermal-58');
+                    }}
+                    className={`pb-2.5 px-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+                      printCategoryTab === 'sales'
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>1. Printer Nota Penjualan Kasir</span>
+                  </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handlePrintChange('paperWidth', '80mm')}
-                        className={`py-2 px-3 rounded-lg text-xs font-bold border flex flex-col items-center justify-center gap-1 transition-all ${
-                          formData.printSettings.paperWidth === '80mm'
-                            ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#0D47A1] shadow-xs'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        <span>80 mm</span>
-                        <span className="text-[10px] text-gray-400 font-normal">Standar POS Kasir</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Font Size */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      Ukuran Huruf Struk
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['small', 'normal', 'large'] as const).map((size) => (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => handlePrintChange('fontSize', size)}
-                          className={`py-2 px-2 rounded-lg text-xs font-bold border capitalize transition-all ${
-                            formData.printSettings.fontSize === size
-                              ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#0D47A1] shadow-xs'
-                              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          {size === 'small' ? 'Kecil' : size === 'normal' ? 'Normal' : 'Besar'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrintCategoryTab('service');
+                      setPreviewDocType('service');
+                      setPreviewPrinter(formData.printSettings.servicePrinterType || 'inkjet-a5');
+                    }}
+                    className={`pb-2.5 px-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+                      printCategoryTab === 'service'
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    <Wrench className="w-4 h-4" />
+                    <span>2. Printer Nota &amp; Serah Terima Service</span>
+                  </button>
                 </div>
 
-                {/* Checklist Elemen Struk */}
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
-                  <span className="text-xs font-bold text-gray-800 block">
-                    Elemen yang Ditampilkan pada Struk:
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={formData.printSettings.showLogo}
-                        onChange={(e) => handlePrintChange('showLogo', e.target.checked)}
-                        className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
-                      />
-                      <span>Tampilkan Logo Toko di Atas Struk</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={formData.printSettings.showStoreAddress}
-                        onChange={(e) =>
-                          handlePrintChange('showStoreAddress', e.target.checked)
-                        }
-                        className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
-                      />
-                      <span>Tampilkan Alamat Toko</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={formData.printSettings.showStoreContact}
-                        onChange={(e) =>
-                          handlePrintChange('showStoreContact', e.target.checked)
-                        }
-                        className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
-                      />
-                      <span>Tampilkan No. Telp / WA Toko</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={formData.printSettings.showCashierName}
-                        onChange={(e) => handlePrintChange('showCashierName', e.target.checked)}
-                        className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
-                      />
-                      <span>Tampilkan Nama Kasir</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={formData.printSettings.showSerialNumber}
-                        onChange={(e) =>
-                          handlePrintChange('showSerialNumber', e.target.checked)
-                        }
-                        className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
-                      />
-                      <span>Tampilkan Serial Number (SN) Unit</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={formData.printSettings.showWarranty}
-                        onChange={(e) => handlePrintChange('showWarranty', e.target.checked)}
-                        className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
-                      />
-                      <span>Tampilkan Info Garansi Tiap Produk</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Header & Footer Custom Texts */}
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Teks Header / Sub-Header Tambahan
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.printSettings.headerNote}
-                      onChange={(e) => handlePrintChange('headerNote', e.target.value)}
-                      placeholder="Contoh: SOLUSI IT & SERVICE TERPERCAYA"
-                      className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Catatan Kaki Struk Baris 1 (Ketentuan Garansi)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.printSettings.footerNote1}
-                      onChange={(e) => handlePrintChange('footerNote1', e.target.value)}
-                      placeholder="Simpan struk ini sebagai kartu garansi resmi."
-                      className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Catatan Kaki Struk Baris 2 (Syarat Retur / Kebijakan)
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.printSettings.footerNote2}
-                      onChange={(e) => handlePrintChange('footerNote2', e.target.value)}
-                      placeholder="Barang yang dibeli tidak dapat ditukar kecuali ada perjanjian."
-                      className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
-                    />
-                  </div>
-                </div>
-
-                {/* Auto Print dialog toggle */}
-                <div className="pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <input
-                      type="checkbox"
-                      checked={formData.printSettings.autoPrintDialog}
-                      onChange={(e) => handlePrintChange('autoPrintDialog', e.target.checked)}
-                      className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
-                    />
+                {/* TAB 1: NOTA PENJUALAN KASIR */}
+                {printCategoryTab === 'sales' && (
+                  <div className="space-y-5">
+                    {/* Pilih Hardware Printer Penjualan */}
                     <div>
-                      <span className="text-xs font-bold text-[#0D47A1] block">
-                        Otomatis Buka Dialog Cetak Saat Transaksi Kasir Selesai
+                      <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                        Tipe Printer Kasir Utama (Penjualan)
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {(
+                          [
+                            {
+                              id: 'thermal-58',
+                              name: 'Thermal 58mm',
+                              desc: 'Mini Bluetooth POS',
+                              icon: '📱',
+                            },
+                            {
+                              id: 'thermal-80',
+                              name: 'Thermal 80mm',
+                              desc: 'Kasir Standar POS',
+                              icon: '🧾',
+                            },
+                            {
+                              id: 'dot-matrix',
+                              name: 'Dot Matrix NCR',
+                              desc: 'Epson LX-310 Rangkap',
+                              icon: '🖨️',
+                            },
+                            {
+                              id: 'inkjet-a5',
+                              name: 'Nota A5',
+                              desc: '1/2 Folio Toko',
+                              icon: '📄',
+                            },
+                            {
+                              id: 'inkjet-a4',
+                              name: 'Faktur A4',
+                              desc: 'Invoice Full Lembar',
+                              icon: '📑',
+                            },
+                          ] as const
+                        ).map((p) => {
+                          const isSelected =
+                            (formData.printSettings.salesPrinterType || 'thermal-58') === p.id;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                handlePrintChange('salesPrinterType', p.id);
+                                if (p.id === 'thermal-80') {
+                                  handlePrintChange('paperWidth', '80mm');
+                                } else if (p.id === 'thermal-58') {
+                                  handlePrintChange('paperWidth', '58mm');
+                                }
+                                setPreviewPrinter(p.id);
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                                isSelected
+                                  ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-600/30 shadow-xs'
+                                  : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="text-xl mb-1">{p.icon}</div>
+                              <span
+                                className={`text-xs font-bold leading-tight ${
+                                  isSelected ? 'text-blue-900' : 'text-gray-800'
+                                }`}
+                              >
+                                {p.name}
+                              </span>
+                              <span className="text-[10px] text-gray-500 mt-0.5">{p.desc}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Ukuran Huruf & Rangkap */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Ukuran Huruf Struk
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(['small', 'normal', 'large'] as const).map((size) => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => handlePrintChange('fontSize', size)}
+                              className={`py-2 px-2 rounded-lg text-xs font-bold border capitalize transition-all cursor-pointer ${
+                                formData.printSettings.fontSize === size
+                                  ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#0D47A1] shadow-xs'
+                                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              {size === 'small' ? 'Kecil' : size === 'normal' ? 'Normal' : 'Besar'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                          Jumlah Rangkap Cetak Penjualan
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[1, 2].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              onClick={() => handlePrintChange('printCopies', num)}
+                              className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                                (formData.printSettings.printCopies || 1) === num
+                                  ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#0D47A1] shadow-xs'
+                                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              {num === 1 ? '1x Lembar (Pelanggan)' : '2x Rangkap (Toko + Customer)'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Checklist Elemen Struk */}
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+                      <span className="text-xs font-bold text-gray-800 block">
+                        Elemen yang Ditampilkan pada Struk Kasir:
                       </span>
-                      <span className="text-[11px] text-gray-600">
-                        Memudahkan kasir mencetak struk thermal secara langsung tanpa harus mengklik
-                        tombol cetak manual.
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.printSettings.showLogo}
+                            onChange={(e) => handlePrintChange('showLogo', e.target.checked)}
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan Logo Toko di Atas Struk</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.printSettings.showStoreAddress}
+                            onChange={(e) =>
+                              handlePrintChange('showStoreAddress', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan Alamat Toko ({formData.address})</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.printSettings.showStoreContact}
+                            onChange={(e) =>
+                              handlePrintChange('showStoreContact', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan No. Telp / WA ({formData.phone})</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.printSettings.showCashierName}
+                            onChange={(e) => handlePrintChange('showCashierName', e.target.checked)}
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan Nama Kasir</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.printSettings.showSerialNumber}
+                            onChange={(e) =>
+                              handlePrintChange('showSerialNumber', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan Serial Number (SN) Unit</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={formData.printSettings.showWarranty}
+                            onChange={(e) => handlePrintChange('showWarranty', e.target.checked)}
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan Info Garansi Tiap Produk</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Header & Footer Custom Texts */}
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Teks Header / Slogan Tambahan
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.printSettings.headerNote}
+                          onChange={(e) => handlePrintChange('headerNote', e.target.value)}
+                          placeholder="Contoh: SOLUSI IT & SERVICE TERPERCAYA"
+                          className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Catatan Kaki Struk Baris 1 (Ketentuan Garansi)
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.printSettings.footerNote1}
+                          onChange={(e) => handlePrintChange('footerNote1', e.target.value)}
+                          placeholder="Simpan struk ini sebagai kartu garansi resmi."
+                          className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Catatan Kaki Struk Baris 2 (Syarat Retur / Kebijakan)
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.printSettings.footerNote2}
+                          onChange={(e) => handlePrintChange('footerNote2', e.target.value)}
+                          placeholder="Barang yang dibeli tidak dapat ditukar kecuali ada perjanjian."
+                          className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Auto Print dialog toggle */}
+                    <div className="pt-1">
+                      <label className="flex items-center gap-2.5 cursor-pointer p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <input
+                          type="checkbox"
+                          checked={formData.printSettings.autoPrintDialog}
+                          onChange={(e) => handlePrintChange('autoPrintDialog', e.target.checked)}
+                          className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                        />
+                        <div>
+                          <span className="text-xs font-bold text-[#0D47A1] block">
+                            Otomatis Buka Dialog Cetak Saat Transaksi Kasir Selesai
+                          </span>
+                          <span className="text-[11px] text-gray-600">
+                            Memudahkan kasir langsung mencetak tanpa perlu klik manual.
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: NOTA & SERAH TERIMA SERVICE */}
+                {printCategoryTab === 'service' && (
+                  <div className="space-y-5">
+                    {/* Hardware Printer Service Selection */}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-800 mb-1.5">
+                        Tipe Printer Khusus Serah Terima &amp; Nota Service
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {(
+                          [
+                            {
+                              id: 'thermal-58',
+                              name: 'Thermal 58mm',
+                              desc: 'Kecil Ringkas',
+                              icon: '📱',
+                            },
+                            {
+                              id: 'thermal-80',
+                              name: 'Thermal 80mm',
+                              desc: 'Standar POS',
+                              icon: '🧾',
+                            },
+                            {
+                              id: 'dot-matrix',
+                              name: 'Dot Matrix NCR',
+                              desc: 'Form Rangkap Kertas',
+                              icon: '🖨️',
+                            },
+                            {
+                              id: 'inkjet-a5',
+                              name: 'Nota A5 (Rekomendasi)',
+                              desc: '1/2 Folio Standar IT',
+                              icon: '📄',
+                            },
+                            {
+                              id: 'inkjet-a4',
+                              name: 'Faktur A4 Lembar Kerja',
+                              desc: 'Lengkap dengan Form',
+                              icon: '📑',
+                            },
+                          ] as const
+                        ).map((p) => {
+                          const isSelected =
+                            (formData.printSettings.servicePrinterType || 'inkjet-a5') === p.id;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                handlePrintChange('servicePrinterType', p.id);
+                                setPreviewPrinter(p.id);
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                                isSelected
+                                  ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-600/30 shadow-xs'
+                                  : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="text-xl mb-1">{p.icon}</div>
+                              <span
+                                className={`text-xs font-bold leading-tight ${
+                                  isSelected ? 'text-blue-900' : 'text-gray-800'
+                                }`}
+                              >
+                                {p.name}
+                              </span>
+                              <span className="text-[10px] text-gray-500 mt-0.5">{p.desc}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Rangkap Cetak Service */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Rangkap Dokumen Serah Terima Service
+                      </label>
+                      <div className="grid grid-cols-2 gap-3 max-w-md">
+                        {[1, 2].map((num) => (
+                          <button
+                            key={num}
+                            type="button"
+                            onClick={() => handleServicePrintChange('copies', num)}
+                            className={`py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                              (formData.printSettings.servicePrintSettings?.copies || 2) === num
+                                ? 'bg-[#E3F2FD] border-[#1E88E5] text-[#0D47A1] shadow-xs'
+                                : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            {num === 1
+                              ? '1 Lembar (Tanda Terima)'
+                              : '2 Rangkap (Pelanggan + Arsip Teknisi)'}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-[11px] text-gray-500 mt-1 block">
+                        Untuk bengkel/service center, 2 rangkap sangat disarankan untuk bukti pengambilan unit.
                       </span>
                     </div>
-                  </label>
-                </div>
+
+                    {/* Checklist Pengaturan Service */}
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+                      <span className="text-xs font-bold text-gray-800 block">
+                        Elemen Dokumen Serah Terima Service:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.printSettings.servicePrintSettings?.showAccessories !== false
+                            }
+                            onChange={(e) =>
+                              handleServicePrintChange('showAccessories', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Catat Kelengkapan Unit Bawaan (Charger, Tas, Box)</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.printSettings.servicePrintSettings?.showDiagnosis !== false
+                            }
+                            onChange={(e) =>
+                              handleServicePrintChange('showDiagnosis', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan Diagnosa Masuk &amp; Tindakan Teknisi</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.printSettings.servicePrintSettings?.showSignatures !== false
+                            }
+                            onChange={(e) =>
+                              handleServicePrintChange('showSignatures', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Kolom Tanda Tangan Serah Terima (Teknisi &amp; Pelanggan)</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.printSettings.servicePrintSettings?.showTerms !== false
+                            }
+                            onChange={(e) =>
+                              handleServicePrintChange('showTerms', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Tampilkan Syarat &amp; Ketentuan Hukum Service</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={
+                              formData.printSettings.servicePrintSettings?.autoPrintOnSave ?? false
+                            }
+                            onChange={(e) =>
+                              handleServicePrintChange('autoPrintOnSave', e.target.checked)
+                            }
+                            className="rounded text-[#1E88E5] focus:ring-[#1E88E5]"
+                          />
+                          <span>Otomatis Munculkan Cetak Saat Tiket Service Didaftarkan</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Syarat & Ketentuan Service Textarea */}
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Syarat &amp; Ketentuan Serah Terima Service (Dicetak di Lembar Tanda Terima)
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={
+                            formData.printSettings.servicePrintSettings?.termsNote ||
+                            '1. Unit yang tidak diambil lebih dari 30 hari di luar tanggung jawab toko.\n2. Backup data pribadi merupakan tanggung jawab pemilik unit.\n3. Pengambilan unit wajib membawa lembar bukti tanda terima ini.'
+                          }
+                          onChange={(e) =>
+                            handleServicePrintChange('termsNote', e.target.value)
+                          }
+                          className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Kebijakan Garansi Service
+                        </label>
+                        <input
+                          type="text"
+                          value={
+                            formData.printSettings.servicePrintSettings?.warrantyNote ||
+                            'Garansi berlaku sesuai nota perbaikan dengan syarat segel utuh dan nota fisik dibawa.'
+                          }
+                          onChange={(e) =>
+                            handleServicePrintChange('warrantyNote', e.target.value)
+                          }
+                          className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1039,163 +1389,342 @@ export default function SettingsTab({
           </form>
         </div>
 
-        {/* Right Column: Real-Time Live Thermal Receipt Preview (5 cols) */}
+        {/* Right Column: Dynamic Live Preview for Sales & Service Receipts */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-xs">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2 text-gray-900 font-bold text-sm">
                 <Eye className="w-4 h-4 text-[#1E88E5]" />
-                <span>Pratinjau Struk Kasir (Live Preview)</span>
+                <span>Live Preview Cetak Nota</span>
               </div>
-              <span className="text-[10px] font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">
-                {formData.printSettings.paperWidth} • {formData.printSettings.fontSize}
+              <span className="text-[10px] font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold border border-blue-100 uppercase">
+                {previewPrinter}
               </span>
             </div>
 
-            <p className="text-xs text-gray-500 my-2">
-              Tampilan struk ini otomatis ter-update saat Anda mengubah nama toko, logo, alamat, atau
-              opsi cetak di sebelah kiri.
-            </p>
-
-            {/* Thermal Receipt Paper Mockup */}
-            <div className="bg-gray-100 p-4 rounded-xl border border-gray-200 flex items-center justify-center overflow-x-auto">
-              <div
-                style={{
-                  fontSize:
-                    formData.printSettings.fontSize === 'small'
-                      ? '11px'
-                      : formData.printSettings.fontSize === 'large'
-                      ? '13px'
-                      : '12px',
+            {/* Document Selector Pills */}
+            <div className="my-2.5 flex items-center gap-1.5 p-1 bg-gray-100 rounded-lg text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewDocType('sales');
+                  setPreviewPrinter(formData.printSettings.salesPrinterType || 'thermal-58');
                 }}
-                className={`receipt-paper font-mono leading-relaxed text-gray-900 bg-white border border-dashed border-gray-400 p-4 rounded-xs shadow-md mx-auto transition-all ${
-                  formData.printSettings.paperWidth === '58mm'
-                    ? 'w-[280px]'
-                    : 'w-[340px]'
+                className={`flex-1 py-1.5 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  previewDocType === 'sales'
+                    ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                {/* Store Header in Receipt */}
-                <div className="text-center pb-2 border-b border-dashed border-gray-400">
-                  {/* Optional Logo */}
-                  {formData.printSettings.showLogo && formData.logoUrl && (
-                    <div className="w-12 h-12 mx-auto mb-1 rounded-md overflow-hidden flex items-center justify-center">
-                      <img
-                        src={formData.logoUrl}
-                        alt="Logo Toko"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  )}
+                <FileText className="w-3.5 h-3.5" />
+                <span>Nota Kasir</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewDocType('service');
+                  setPreviewPrinter(formData.printSettings.servicePrinterType || 'inkjet-a5');
+                }}
+                className={`flex-1 py-1.5 px-2 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  previewDocType === 'service'
+                    ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>Serah Terima Service</span>
+              </button>
+            </div>
 
-                  <div className="font-bold text-sm tracking-wider uppercase">
-                    {formData.storeName || 'HIROSHI COMPUTER'}
-                  </div>
+            {/* Quick Profile Filter Pills */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-2 text-[11px]">
+              {(
+                [
+                  { id: 'thermal-58', label: '58mm' },
+                  { id: 'thermal-80', label: '80mm' },
+                  { id: 'dot-matrix', label: 'Dot Matrix' },
+                  { id: 'inkjet-a5', label: 'Nota A5' },
+                  { id: 'inkjet-a4', label: 'Faktur A4' },
+                ] as const
+              ).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPreviewPrinter(p.id)}
+                  className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer shrink-0 font-medium ${
+                    previewPrinter === p.id
+                      ? 'bg-slate-900 text-white font-bold'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
 
-                  {formData.tagline && (
-                    <div className="text-[10px] text-gray-600 leading-tight">
-                      {formData.tagline}
-                    </div>
-                  )}
-
-                  {formData.printSettings.showStoreAddress && formData.address && (
-                    <div className="text-[10px] text-gray-500 mt-0.5">
-                      {formData.address}
-                      {formData.city ? `, ${formData.city}` : ''}
-                    </div>
-                  )}
-
-                  {formData.printSettings.showStoreContact && formData.phone && (
-                    <div className="text-[10px] text-gray-500">Telp/WA: {formData.phone}</div>
-                  )}
-
-                  {formData.printSettings.headerNote && (
-                    <div className="text-[10px] font-semibold text-gray-700 mt-1 uppercase border-t border-dashed border-gray-300 pt-1">
-                      {formData.printSettings.headerNote}
-                    </div>
-                  )}
-                </div>
-
-                {/* Transaction Meta Sample */}
-                <div className="py-2 border-b border-dashed border-gray-400 text-[11px] space-y-0.5">
-                  <div className="flex justify-between">
-                    <span>No. TRX:</span>
-                    <span className="font-semibold">TRX-20260909-001</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tanggal:</span>
-                    <span>2026-09-09 14:25</span>
-                  </div>
-                  {formData.printSettings.showCashierName && (
-                    <div className="flex justify-between">
-                      <span>Kasir:</span>
-                      <span>{currentUser.fullName.split(' ')[0]}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Metode:</span>
-                    <span className="font-bold">QRIS / Tunai</span>
-                  </div>
-                </div>
-
-                {/* Sample Items List */}
-                <div className="py-2 border-b border-dashed border-gray-400 space-y-2">
-                  {sampleItems.map((it, i) => (
-                    <div key={i} className="space-y-0.5">
-                      <div className="font-semibold text-gray-900 leading-tight">{it.name}</div>
-                      <div className="flex justify-between text-[11px] text-gray-600">
-                        <span>
-                          {it.qty} x {formatCurrency(it.price)}
-                        </span>
-                        <span className="font-medium text-gray-900">
-                          {formatCurrency(it.price * it.qty)}
-                        </span>
+            {/* Receipt Preview Canvas */}
+            <div className="bg-gray-100 p-3 sm:p-4 rounded-xl border border-gray-200 flex items-center justify-center overflow-x-auto min-h-[440px] max-h-[640px] overflow-y-auto">
+              {/* 1. SALES RECEIPT PREVIEW */}
+              {previewDocType === 'sales' && (
+                <div
+                  style={{
+                    fontSize:
+                      formData.printSettings.fontSize === 'small'
+                        ? '11px'
+                        : formData.printSettings.fontSize === 'large'
+                        ? '13px'
+                        : '12px',
+                  }}
+                  className={`font-mono text-gray-900 bg-white border border-dashed border-gray-400 p-4 rounded-xs shadow-md transition-all ${
+                    previewPrinter === 'thermal-58'
+                      ? 'w-[280px]'
+                      : previewPrinter === 'thermal-80'
+                      ? 'w-[340px]'
+                      : previewPrinter === 'dot-matrix'
+                      ? 'w-[360px] bg-amber-50/40 border-amber-300'
+                      : 'w-[400px]'
+                  }`}
+                >
+                  {/* Store Header */}
+                  <div className="text-center pb-2 border-b border-dashed border-gray-400">
+                    {formData.printSettings.showLogo && formData.logoUrl && (
+                      <div className="w-12 h-12 mx-auto mb-1 rounded-md overflow-hidden flex items-center justify-center">
+                        <img
+                          src={formData.logoUrl}
+                          alt="Logo Toko"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
-                      {formData.printSettings.showSerialNumber && it.sn && (
-                        <div className="text-[10px] text-blue-700 font-medium">SN: {it.sn}</div>
-                      )}
-                      {formData.printSettings.showWarranty && it.warranty && (
-                        <div className="flex items-center gap-1 text-[10px] text-emerald-700">
-                          <ShieldCheck className="w-3 h-3 shrink-0" />
-                          <span>Garansi: {it.warranty}</span>
-                        </div>
-                      )}
+                    )}
+
+                    <div className="font-bold text-sm tracking-wider uppercase">
+                      {formData.storeName || 'HIROSHI COMPUTER'}
                     </div>
-                  ))}
-                </div>
 
-                {/* Totals */}
-                <div className="py-2 space-y-1 text-[11px]">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>{formatCurrency(1330000)}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-xs text-black pt-1 border-t border-dashed border-gray-400">
-                    <span>TOTAL:</span>
-                    <span>{formatCurrency(1330000)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Bayar (Tunai):</span>
-                    <span>{formatCurrency(1350000)}</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Kembalian:</span>
-                    <span>{formatCurrency(20000)}</span>
-                  </div>
-                </div>
+                    {formData.tagline && (
+                      <div className="text-[10px] text-gray-600 leading-tight">
+                        {formData.tagline}
+                      </div>
+                    )}
 
-                {/* Footer Notes */}
-                <div className="pt-2 border-t border-dashed border-gray-400 text-center text-[10px] text-gray-500 space-y-1">
-                  <div className="font-semibold text-emerald-600">
-                    Terima Kasih Atas Kunjungan Anda
+                    {formData.printSettings.showStoreAddress && formData.address && (
+                      <div className="text-[10px] text-gray-500 mt-0.5">
+                        {formData.address}
+                        {formData.city ? `, ${formData.city}` : ''}
+                      </div>
+                    )}
+
+                    {formData.printSettings.showStoreContact && formData.phone && (
+                      <div className="text-[10px] text-gray-500">Telp/WA: {formData.phone}</div>
+                    )}
+
+                    {formData.printSettings.headerNote && (
+                      <div className="text-[10px] font-semibold text-gray-700 mt-1 uppercase border-t border-dashed border-gray-300 pt-1">
+                        {formData.printSettings.headerNote}
+                      </div>
+                    )}
                   </div>
-                  {formData.printSettings.footerNote1 && (
-                    <div>{formData.printSettings.footerNote1}</div>
+
+                  {/* Transaction Meta Sample */}
+                  <div className="py-2 border-b border-dashed border-gray-400 text-[11px] space-y-0.5">
+                    <div className="flex justify-between">
+                      <span>No. TRX:</span>
+                      <span className="font-semibold">TRX-20260909-001</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tanggal:</span>
+                      <span>2026-09-09 14:25</span>
+                    </div>
+                    {formData.printSettings.showCashierName && (
+                      <div className="flex justify-between">
+                        <span>Kasir:</span>
+                        <span>{currentUser.fullName.split(' ')[0]}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>Metode:</span>
+                      <span className="font-bold">Tunai / QRIS</span>
+                    </div>
+                  </div>
+
+                  {/* Sample Items List */}
+                  <div className="py-2 border-b border-dashed border-gray-400 space-y-2">
+                    {sampleItems.map((it, i) => (
+                      <div key={i} className="space-y-0.5">
+                        <div className="font-semibold text-gray-900 leading-tight">{it.name}</div>
+                        <div className="flex justify-between text-[11px] text-gray-600">
+                          <span>
+                            {it.qty} x {formatCurrency(it.price)}
+                          </span>
+                          <span className="font-medium text-gray-900">
+                            {formatCurrency(it.price * it.qty)}
+                          </span>
+                        </div>
+                        {formData.printSettings.showSerialNumber && it.sn && (
+                          <div className="text-[10px] text-blue-700 font-medium">SN: {it.sn}</div>
+                        )}
+                        {formData.printSettings.showWarranty && it.warranty && (
+                          <div className="flex items-center gap-1 text-[10px] text-emerald-700">
+                            <ShieldCheck className="w-3 h-3 shrink-0" />
+                            <span>Garansi: {it.warranty}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Totals */}
+                  <div className="py-2 space-y-1 text-[11px]">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>{formatCurrency(1330000)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-xs text-black pt-1 border-t border-dashed border-gray-400">
+                      <span>TOTAL:</span>
+                      <span>{formatCurrency(1330000)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Bayar (Tunai):</span>
+                      <span>{formatCurrency(1350000)}</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-700 font-semibold">
+                      <span>Kembalian:</span>
+                      <span>{formatCurrency(20000)}</span>
+                    </div>
+                  </div>
+
+                  {/* Footer Notes */}
+                  <div className="pt-2 border-t border-dashed border-gray-400 text-center text-[10px] text-gray-500 space-y-1">
+                    <div className="font-semibold text-emerald-600">
+                      Terima Kasih Atas Kunjungan Anda
+                    </div>
+                    {formData.printSettings.footerNote1 && (
+                      <div>{formData.printSettings.footerNote1}</div>
+                    )}
+                    {formData.printSettings.footerNote2 && (
+                      <div>{formData.printSettings.footerNote2}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. SERVICE HANDOVER RECEIPT PREVIEW */}
+              {previewDocType === 'service' && (
+                <div
+                  className={`font-sans text-gray-900 bg-white border border-gray-300 p-4 rounded-xs shadow-md transition-all text-xs ${
+                    previewPrinter === 'thermal-58'
+                      ? 'w-[280px] font-mono text-[11px]'
+                      : previewPrinter === 'thermal-80'
+                      ? 'w-[340px] font-mono text-xs'
+                      : previewPrinter === 'dot-matrix'
+                      ? 'w-[380px] font-mono bg-amber-50/30 border-amber-300'
+                      : 'w-[430px]'
+                  }`}
+                >
+                  {/* Service Header */}
+                  <div className="text-center pb-2 border-b-2 border-gray-800">
+                    <div className="font-black text-sm uppercase tracking-wide">
+                      {formData.storeName || 'HIROSHI COMPUTER'}
+                    </div>
+                    <div className="text-[10px] text-gray-600 font-medium">
+                      {formData.address} • Telp/WA: {formData.phone}
+                    </div>
+                    <div className="inline-block bg-slate-900 text-white font-bold text-[10px] px-2 py-0.5 mt-1 rounded uppercase tracking-wider">
+                      BUKTI TANDA TERIMA SERVICE
+                    </div>
+                  </div>
+
+                  {/* Service Ticket Meta */}
+                  <div className="py-2 border-b border-gray-200 grid grid-cols-2 gap-1 text-[11px]">
+                    <div>
+                      <span className="text-gray-500">No. Tiket:</span>{' '}
+                      <span className="font-bold">SRV-20260912-004</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-gray-500">Tgl:</span> 12/09/2026
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Pelanggan:</span>{' '}
+                      <span className="font-semibold">Bpk. Haryono</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-gray-500">WA:</span> 081234567890
+                    </div>
+                  </div>
+
+                  {/* Unit & Issues */}
+                  <div className="py-2 border-b border-gray-200 space-y-1.5 text-[11px]">
+                    <div>
+                      <span className="text-gray-500 block text-[10px]">Tipe Unit / Seri:</span>
+                      <span className="font-bold text-gray-900">
+                        Laptop ASUS TUF Gaming FX505 (SN: FX505-88210)
+                      </span>
+                    </div>
+
+                    {formData.printSettings.servicePrintSettings?.showAccessories !== false && (
+                      <div className="bg-gray-50 p-1.5 rounded border border-gray-200 text-[10px]">
+                        <span className="font-bold text-gray-700">Kelengkapan Unit:</span> Unit Laptop + Adaptor Charger Original 20V + Tas
+                      </div>
+                    )}
+
+                    <div className="bg-red-50/70 p-1.5 rounded border border-red-200 text-[10px]">
+                      <span className="font-bold text-red-800">Keluhan:</span> Mati mendadak saat gaming &amp; kipas berisik
+                    </div>
+
+                    {formData.printSettings.servicePrintSettings?.showDiagnosis !== false && (
+                      <div className="bg-blue-50/70 p-1.5 rounded border border-blue-200 text-[10px]">
+                        <span className="font-bold text-blue-800">Diagnosa / Tindakan:</span> Repaste Thermal Paste Grizzly + Deep Clean Fan + Reinstall OS
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Biaya & Status DP */}
+                  <div className="py-2 border-b border-gray-200 space-y-1 text-[11px]">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Estimasi Biaya:</span>
+                      <span className="font-semibold">{formatCurrency(250000)}</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-700">
+                      <span>Uang Muka (DP):</span>
+                      <span className="font-bold">{formatCurrency(100000)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-gray-900 pt-0.5 border-t border-dashed border-gray-300">
+                      <span>Sisa Pembayaran:</span>
+                      <span>{formatCurrency(150000)}</span>
+                    </div>
+                    <div className="text-[10px] text-blue-700 font-medium pt-0.5">
+                      Garansi Service: 1 Bulan (Suku Cadang &amp; Jasa)
+                    </div>
+                  </div>
+
+                  {/* Signatures */}
+                  {formData.printSettings.servicePrintSettings?.showSignatures !== false && (
+                    <div className="py-2.5 grid grid-cols-2 gap-4 text-center text-[10px] text-gray-700">
+                      <div>
+                        <div>Teknisi Toko</div>
+                        <div className="h-10 border-b border-dotted border-gray-400 mt-2"></div>
+                        <div className="text-gray-500 mt-0.5">({currentUser.fullName})</div>
+                      </div>
+                      <div>
+                        <div>Yang Menyerahkan</div>
+                        <div className="h-10 border-b border-dotted border-gray-400 mt-2"></div>
+                        <div className="text-gray-500 mt-0.5">(Pelanggan)</div>
+                      </div>
+                    </div>
                   )}
-                  {formData.printSettings.footerNote2 && (
-                    <div>{formData.printSettings.footerNote2}</div>
+
+                  {/* Terms */}
+                  {formData.printSettings.servicePrintSettings?.showTerms !== false && (
+                    <div className="pt-2 border-t border-gray-200 text-[9px] text-gray-500 leading-tight">
+                      <div className="font-bold text-gray-700 mb-0.5">Syarat &amp; Ketentuan:</div>
+                      <div>
+                        1. Unit yang tidak diambil &gt; 30 hari di luar tanggung jawab toko.
+                      </div>
+                      <div>2. Harap membawa bukti tanda terima ini saat pengambilan.</div>
+                    </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Quick Test Print Button */}
@@ -1203,10 +1732,10 @@ export default function SettingsTab({
               <button
                 type="button"
                 onClick={handleTestPrint}
-                className="w-full py-2 px-3 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-2 px-3 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>Tes Cetak Format Ini</span>
+                <span>Tes Cetak Format Dokumen Ini</span>
               </button>
             </div>
           </div>

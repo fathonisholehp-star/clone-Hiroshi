@@ -168,9 +168,9 @@ export default function PromoLanding({
 
   const storeName = storeSettings.storeName || 'HIROSHI COMPUTER';
   const tagline = storeSettings.tagline || 'Toko Komputer, Part PC & Layanan Service IT';
-  const phone = storeSettings.phone || '0812-3456-7890';
-  const address = storeSettings.address || 'Jl. Ahmad Yani No. 88';
-  const city = storeSettings.city || 'Surabaya, Jawa Timur';
+  const phone = storeSettings.phone || '085876500029';
+  const address = storeSettings.address || 'Jl. Tunggorono No 46 Pucangan';
+  const city = storeSettings.city || 'Kartasura';
 
   const waLink = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Halo%20${encodeURIComponent(
     storeName
