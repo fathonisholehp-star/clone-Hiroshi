@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+/* Sleek Tech Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+/* =========================================================
+   THEME: DARK STEALTH (Toko Komputer Modern / Gaming PC Rig)
+   ========================================================= */
+.theme-dark-stealth {
+  color-scheme: dark;
+  background-color: #090d16 !important;
+  color: #f1f5f9;
+}
+
+.theme-dark-stealth main {
+  color: #f1f5f9;
+}
+
+/* Card surfaces */
+.theme-dark-stealth .bg-white:not(.receipt-paper):not(.preserve-white) {
+  background-color: #111827 !important;
+  color: #f1f5f9 !important;
+  border-color: #1f2937 !important;
+}
+
+.theme-dark-stealth .bg-gray-50:not(.receipt-paper) {
+  background-color: #0b1120 !important;
+  color: #f1f5f9 !important;
+}
+
+.theme-dark-stealth .bg-gray-100:not(.receipt-paper) {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+.theme-dark-stealth .bg-gray-200:not(.receipt-paper) {
+  background-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+/* Subtle light blues become sleek dark accents */
+.theme-dark-stealth .bg-blue-50:not(.preserve-color) {
+  background-color: rgba(14, 165, 233, 0.12) !important;
+  color: #38bdf8 !important;
+}
+
+.theme-dark-stealth .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+  color: #a5b4fc !important;
+}
+
+/* Borders */
+.theme-dark-stealth .border-gray-100,
+.theme-dark-stealth .border-gray-200,
+.theme-dark-stealth .border-gray-300 {
+  border-color: #1f2937 !important;
+}
+
+/* Typography */
+.theme-dark-stealth .text-gray-900:not(.receipt-paper):not(.preserve-text),
+.theme-dark-stealth .text-gray-800:not(.receipt-paper):not(.preserve-text) {
+  color: #f8fafc !important;
+}
+
+.theme-dark-stealth .text-gray-700:not(.receipt-paper),
+.theme-dark-stealth .text-gray-600:not(.receipt-paper) {
+  color: #cbd5e1 !important;
+}
+
+.theme-dark-stealth .text-gray-500:not(.receipt-paper),
+.theme-dark-stealth .text-gray-400:not(.receipt-paper) {
+  color: #94a3b8 !important;
+}
+
+/* Inputs & Form Controls */
+.theme-dark-stealth input:not([type="checkbox"]):not([type="radio"]):not(.preserve-input),
+.theme-dark-stealth select,
+.theme-dark-stealth textarea {
+  background-color: #0b1120 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.theme-dark-stealth input:focus,
+.theme-dark-stealth select:focus,
+.theme-dark-stealth textarea:focus {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25) !important;
+}
+
+.theme-dark-stealth input::placeholder,
+.theme-dark-stealth textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Tables */
+.theme-dark-stealth table thead tr {
+  background-color: #0b1120 !important;
+  border-color: #1f2937 !important;
+}
+
+.theme-dark-stealth table thead th {
+  color: #94a3b8 !important;
+  border-color: #1f2937 !important;
+}
+
+.theme-dark-stealth table tbody td {
+  border-color: #1f2937 !important;
+}
+
+.theme-dark-stealth table tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+}
+
+/* Modal Backdrops & Dialogs */
+.theme-dark-stealth .bg-white.shadow-2xl,
+.theme-dark-stealth .bg-white.shadow-xl {
+  background-color: #111827 !important;
+  border-color: #1f2937 !important;
+}
+
+/* Product Card Glow in Dark Stealth */
+.theme-dark-stealth [id^="product-card-"]:hover {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 4px 20px -2px rgba(14, 165, 233, 0.2) !important;
+}
+
+/* =========================================================
+   THEME: TITANIUM CLEAN (Boutique IT & Apple/MicroCenter Style)
+   ========================================================= */
+.theme-titanium-clean {
+  background-color: #f1f5f9 !important;
+  color: #0f172a;
+}
+
+.theme-titanium-clean .bg-white {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+
+.theme-titanium-clean [id^="product-card-"]:hover {
+  border-color: #2563eb !important;
+  box-shadow: 0 4px 15px -1px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* Receipt Paper must always remain authentic paper texture */
+.receipt-paper {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+.receipt-paper * {
+  color: inherit !important;
+}
+

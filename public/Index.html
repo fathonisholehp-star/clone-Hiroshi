@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hiroshi Computer - POS & Service Management</title>
+  <style>
+    :root {
+      --primary: #1E88E5;
+      --primary-dark: #0D47A1;
+      --primary-light: #E3F2FD;
+      --bg-neutral: #F5F5F5;
+      --surface: #FFFFFF;
+      --text-main: #212121;
+      --text-muted: #757575;
+      --border: #E0E0E0;
+      --success: #2E7D32;
+      --warning: #F57F17;
+      --danger: #D32F2F;
+      --info: #0288D1;
+      --font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+    }
+
+    body {
+      background-color: var(--bg-neutral);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      background: #fff;
+      color: var(--primary-dark);
+      font-weight: 900;
+      font-size: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .role-pill {
+      background: #fff;
+      color: var(--primary-dark);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .btn-logout:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* TOP NAVIGATION (DESKTOP / TABLET) */
+    .nav-desktop {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      padding: 0 20px;
+      overflow-x: auto;
+    }
+
+    .nav-btn {
+      padding: 14px 20px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-btn:hover {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .nav-btn.active {
+      color: var(--primary-dark);
+      border-bottom-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* MAIN CONTAINER */
+    main {
+      flex: 1;
+      padding: 20px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* CASHIER LAYOUT */
+    .pos-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .pos-catalog {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .search-bar-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .category-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+
+    .cat-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .cat-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .product-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .product-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-color: var(--primary);
+    }
+
+    .product-thumb {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #eee;
+      margin-bottom: 8px;
+    }
+
+    .product-name {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 6px;
+      color: var(--text-main);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-price {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 4px;
+    }
+
+    .product-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .badge-low-stock {
+      color: var(--danger);
+      font-weight: 700;
+      background: #FFEBEE;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* CART PANEL */
+    .pos-cart {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 80px;
+    }
+
+    .cart-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FAFAFA;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .cart-items-list {
+      max-height: 380px;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cart-item-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      background: #FAFAFA;
+    }
+
+    .cart-item-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .btn-remove-item {
+      color: var(--danger);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .cart-inputs-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .cart-input {
+      width: 100%;
+      padding: 4px 6px;
+      font-size: 11px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .cart-qty-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-qty {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .cart-summary-section {
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
+      background: #FAFAFA;
+      border-radius: 0 0 10px 10px;
+    }
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .summary-total {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      border-top: 1px dashed #ccc;
+      padding-top: 8px;
+      margin-top: 6px;
+    }
+
+    .btn-checkout {
+      width: 100%;
+      background: #1565C0;
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn-checkout:hover {
+      background: #0D47A1;
+    }
+
+    /* DATA TABLES & CRUD */
+    .content-card {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-outline {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #EEE;
+    }
+
+    tr:hover td {
+      background: #F9F9F9;
+    }
+
+    /* STATUS BADGES */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-diterima { background: #FFF9C4; color: #F57F17; }
+    .badge-pengecekan { background: #E1F5FE; color: #0288D1; }
+    .badge-diproses { background: #BBDEFB; color: #1976D2; }
+    .badge-selesai { background: #C8E6C9; color: #2E7D32; }
+    .badge-diambil { background: #E0E0E0; color: #424242; }
+    .badge-void { background: #FFCDD2; color: #C62828; }
+
+    /* BOTTOM NAVIGATION (SMARTPHONE) */
+    .nav-mobile {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      z-index: 99;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      justify-content: space-around;
+      padding: 6px 0;
+    }
+
+    .nav-mobile-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: transparent;
+      border: none;
+      font-size: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      gap: 2px;
+    }
+
+    .nav-mobile-btn.active {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 10px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    /* THERMAL RECEIPT PREVIEW */
+    .receipt-paper {
+      width: 300px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 16px;
+      border: 1px dashed #bbb;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    /* RESPONSIVE BREAKPOINTS */
+    @media (max-width: 900px) {
+      .pos-grid {
+        grid-template-columns: 1fr;
+      }
+      .pos-cart {
+        position: static;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .nav-desktop {
+        display: none;
+      }
+      .nav-mobile {
+        display: flex;
+      }
+      main {
+        padding: 12px;
+        margin-bottom: 60px; /* space for bottom nav */
+      }
+      .product-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .brand-title {
+        font-size: 16px;
+      }
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      .receipt-paper, .receipt-paper * {
+        visibility: visible;
+      }
+      .receipt-paper {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand-group">
+      <div class="brand-logo">H</div>
+      <div>
+        <div class="brand-title">HIROSHI COMPUTER</div>
+        <div class="brand-subtitle">POS &amp; IT Service Management</div>
+      </div>
+    </div>
+    <div class="user-badge">
+      <span id="currentUserName">Admin</span>
+      <span class="role-pill" id="currentUserRole">Admin</span>
+      <button class="btn-logout" onclick="showLoginModal()">Switch / Login</button>
+    </div>
+  </header>
+
+  <!-- TOP NAVIGATION (Desktop / Tablet) -->
+  <nav class="nav-desktop">
+    <button class="nav-btn active" onclick="switchTab('kasir')">🛒 Kasir &amp; Penjualan</button>
+    <button class="nav-btn" onclick="switchTab('produk')">💻 Master Produk &amp; Stok</button>
+    <button class="nav-btn" onclick="switchTab('service')">🔧 Modul Service IT</button>
+    <button class="nav-btn" onclick="switchTab('laporan')">📊 Laporan Penjualan</button>
+    <button class="nav-btn" onclick="switchTab('user')" id="tabNavUser">⚙️ Pengaturan User</button>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main>
+
+    <!-- TAB 1: KASIR & PENJUALAN -->
+    <section id="tab-kasir" class="tab-content active">
+      <div class="pos-grid">
+        <!-- Catalog Left -->
+        <div class="pos-catalog">
+          <div class="search-bar-row">
+            <input type="text" id="barcodeSearchInput" class="search-input" placeholder="🔍 Cari nama produk atau scan barcode..." oninput="filterProducts()">
+          </div>
+
+          <!-- Category Pills -->
+          <div class="category-pills" id="categoryPillsContainer">
+            <button class="cat-btn active" onclick="filterCategory('All')">Semua</button>
+            <button class="cat-btn" onclick="filterCategory('Laptop')">Laptop</button>
+            <button class="cat-btn" onclick="filterCategory('Part PC')">Part PC</button>
+            <button class="cat-btn" onclick="filterCategory('Aksesoris')">Aksesoris</button>
+            <button class="cat-btn" onclick="filterCategory('Peripheral')">Peripheral</button>
+            <button class="cat-btn" onclick="filterCategory('Jasa Service')">Jasa Service</button>
+          </div>
+
+          <!-- Product Grid -->
+          <div class="product-cards-grid" id="productGridContainer">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Cart Right -->
+        <div class="pos-cart">
+          <div class="cart-header">
+            <strong>Keranjang Belanja</strong>
+            <button class="btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="clearCart()">Reset</button>
+          </div>
+
+          <div class="cart-items-list" id="cartItemsContainer">
+            <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">Keranjang masih kosong</div>
+          </div>
+
+          <div class="cart-summary-section">
+            <div class="summary-line">
+              <span>Subtotal:</span>
+              <span id="cartSubtotalText">Rp 0</span>
+            </div>
+            <div class="summary-line">
+              <span>Diskon (Rp):</span>
+              <input type="number" id="cartDiscountInput" value="0" style="width: 90px; text-align: right;" oninput="recalcCart()">
+            </div>
+            <div class="summary-line summary-total">
+              <span>Total:</span>
+              <span id="cartTotalText">Rp 0</span>
+            </div>
+            <button class="btn-checkout" onclick="openPaymentModal()">Checkout &amp; Pembayaran</button>
+            <button class="btn-outline" style="width: 100%; margin-top: 6px; font-size: 12px;" onclick="showTrxHistoryModal()">📜 Riwayat Transaksi</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MASTER PRODUK & STOK -->
+    <section id="tab-produk" class="tab-content">
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div>
+            <h2>Master Produk &amp; Manajemen Stok</h2>
+            <p style="font-size: 12px; color: var(--text-muted);">Kelola katalog barang, serial number, batas stok minimum, dan audit stok.</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-outline" onclick="openStockLogModal()">📜 Log Perubahan Stok</button>
+            <button class="btn-primary" onclick="openProductModal()">+ Tambah Produk Baru</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID / Barcode</th>
+                <th>Nama Produk</th>
+                <th>Kategori</th>
+                <th>Harga Jual</th>
+                <th>Stok</th>
+                <th>Min. Stok</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MODUL SERVICE IT -->
+    <section id="tab-service" class="tab-content">
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div>
+            <h2>Modul Penerimaan &amp; Service IT</h2>
+            <p style="font-size: 12px; color: var(--text-muted);">Pencatatan unit service masuk, diagnosa keluhan, update status, dan kirim pesan WhatsApp otomatis.</p>
+          </div>
+          <button class="btn-primary" onclick="openNewServiceModal()">+ Penerimaan Service Baru</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Service</th>
+                <th>Tanggal Masuk</th>
+                <th>Pelanggan / No. WA</th>
+                <th>Perangkat &amp; Keluhan</th>
+                <th>Estimasi Biaya</th>
+                <th>Teknisi</th>
+                <th>Status</th>
+                <th>Aksi / Notifikasi</th>
+              </tr>
+            </thead>
+            <tbody id="serviceTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: LAPORAN PENJUALAN -->
+    <section id="tab-laporan" class="tab-content">
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div>
+            <h2>Laporan &amp; Analisis Penjualan</h2>
+            <p style="font-size: 12px; color: var(--text-muted);">Rekap pendapatan, produk terlaris, dan ekspor data.</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-outline" onclick="exportReportCSV()">📥 Export CSV</button>
+            <button class="btn-primary" onclick="window.print()">🖨️ Cetak Rekap</button>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+          <div style="background: var(--primary-light); padding: 16px; border-radius: 8px; border-left: 4px solid var(--primary-dark);">
+            <div style="font-size: 12px; color: var(--text-muted);">Total Omset Penjualan</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--primary-dark);" id="reportTotalRevenue">Rp 0</div>
+          </div>
+          <div style="background: #E8F5E9; padding: 16px; border-radius: 8px; border-left: 4px solid var(--success);">
+            <div style="font-size: 12px; color: var(--text-muted);">Total Transaksi Berhasil</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--success);" id="reportTotalOrders">0</div>
+          </div>
+          <div style="background: #FFEBEE; padding: 16px; border-radius: 8px; border-left: 4px solid var(--danger);">
+            <div style="font-size: 12px; color: var(--text-muted);">Transaksi Di-Void</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--danger);" id="reportVoidOrders">0</div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 10px; font-size: 15px;">🏆 10 Produk Terlaris (Top Selling)</h3>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Peringkat</th>
+                <th>Nama Produk</th>
+                <th>Jumlah Terjual</th>
+                <th>Total Nominal</th>
+              </tr>
+            </thead>
+            <tbody id="topSellingTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: PENGATURAN USER -->
+    <section id="tab-user" class="tab-content">
+      <div class="content-card">
+        <div class="card-header-bar">
+          <div>
+            <h2>Manajemen Pengguna &amp; Hak Akses (RBAC)</h2>
+            <p style="font-size: 12px; color: var(--text-muted);">Admin, Kasir, dan Teknisi.</p>
+          </div>
+          <button class="btn-primary" onclick="openUserModal()">+ Tambah User</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Role Hak Akses</th>
+                <th>Akses Modul</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION (Smartphone) -->
+  <nav class="nav-mobile">
+    <button class="nav-mobile-btn active" onclick="switchTab('kasir')">
+      <span>🛒</span><span>Kasir</span>
+    </button>
+    <button class="nav-mobile-btn" onclick="switchTab('produk')">
+      <span>💻</span><span>Produk</span>
+    </button>
+    <button class="nav-mobile-btn" onclick="switchTab('service')">
+      <span>🔧</span><span>Service</span>
+    </button>
+    <button class="nav-mobile-btn" onclick="switchTab('laporan')">
+      <span>📊</span><span>Laporan</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: PEMBAYARAN & CHECKOUT -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Pembayaran Transaksi</h3>
+        <button onclick="closeModal('paymentModal')" style="border:none;background:none;font-size:18px;cursor:pointer;">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Total Belanja</label>
+        <div style="font-size: 20px; font-weight: 800; color: var(--primary-dark);" id="modalPayTotal">Rp 0</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Metode Pembayaran</label>
+        <select id="modalPayMethod" class="form-control" onchange="onPaymentMethodChange()">
+          <option value="Tunai">Tunai</option>
+          <option value="QRIS">QRIS (Gopay/OVO/ShopeePay/BCA)</option>
+          <option value="Transfer Bank">Transfer Bank (BCA/Mandiri/BRI)</option>
+          <option value="Debit">Kartu Debit</option>
+        </select>
+      </div>
+      <div class="form-group" id="groupUangDiterima">
+        <label class="form-label">Uang Tunai Diterima (Rp)</label>
+        <input type="number" id="modalPayCash" class="form-control" placeholder="Contoh: 100000" oninput="calcChange()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kembalian</label>
+        <div style="font-size: 16px; font-weight: 700; color: var(--success);" id="modalPayChange">Rp 0</div>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <button class="btn-outline" style="flex:1;" onclick="closeModal('paymentModal')">Batal</button>
+        <button class="btn-primary" style="flex:2; justify-content:center;" onclick="confirmPayment()">Simpan &amp; Cetak Struk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PREVIEW STRUK THERMAL -->
+  <div class="modal-overlay" id="receiptModal">
+    <div class="modal-box" style="max-width: 360px;">
+      <div class="modal-header">
+        <h3>Cetak Struk Kasir</h3>
+        <button onclick="closeModal('receiptModal')" style="border:none;background:none;font-size:18px;cursor:pointer;">&times;</button>
+      </div>
+      <div id="receiptContentContainer">
+        <!-- Rendered Receipt -->
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 14px;">
+        <button class="btn-outline" style="flex:1;" onclick="closeModal('receiptModal')">Tutup</button>
+        <button class="btn-primary" style="flex:1; justify-content:center;" onclick="window.print()">🖨️ Cetak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC DENGAN GOOGLE.SCRIPT.RUN & LOCAL FALLBACK -->
+  <script>
+    // State Aplikasi
+    var currentUser = { username: 'admin', role: 'Admin' };
+    var products = [];
+    var categories = ['Laptop', 'Part PC', 'Aksesoris', 'Peripheral', 'Jasa Service'];
+    var cart = [];
+    var activeCategory = 'All';
+    var currentTrxTotal = 0;
+    var lastSavedTrx = null;
+
+    // Inisialisasi
+    window.onload = function() {
+      loadInitialData();
+    };
+
+    function formatRupiah(val) {
+      return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.nav-btn').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.nav-mobile-btn').forEach(function(el) { el.classList.remove('active'); });
+
+      var target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
+
+      // Update Nav active
+      var idxMap = { 'kasir': 0, 'produk': 1, 'service': 2, 'laporan': 3, 'user': 4 };
+      var idx = idxMap[tabId];
+      var dBtns = document.querySelectorAll('.nav-btn');
+      if (dBtns[idx]) dBtns[idx].classList.add('active');
+      var mBtns = document.querySelectorAll('.nav-mobile-btn');
+      if (mBtns[idx]) mBtns[idx].classList.add('active');
+
+      if (tabId === 'produk') renderProductsTable();
+      if (tabId === 'service') loadServiceOrders();
+      if (tabId === 'laporan') loadReport();
+      if (tabId === 'user') loadUsers();
+    }
+
+    function loadInitialData() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res.success) {
+              products = res.data;
+              renderProductGrid();
+            }
+          })
+          .getProducts();
+      } else {
+        // Mock fallback jika dijalankan di luar Apps Script preview
+        products = [
+          { ID_Produk: 'PRD-001', Nama_Produk: 'Laptop ASUS Vivobook 14 (i5 12th/16GB/512GB)', Kategori: 'Laptop', Harga_Jual: 8950000, Stok: 5, Min_Stok: 2, Gambar_URL: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500' },
+          { ID_Produk: 'PRD-002', Nama_Produk: 'SSD Kingston NV2 1TB NVMe PCIe 4.0', Kategori: 'Part PC', Harga_Jual: 1050000, Stok: 12, Min_Stok: 3, Gambar_URL: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500' },
+          { ID_Produk: 'PRD-003', Nama_Produk: 'RAM Corsair Vengeance 16GB DDR4 3200MHz', Kategori: 'Part PC', Harga_Jual: 650000, Stok: 8, Min_Stok: 3, Gambar_URL: 'https://images.unsplash.com/photo-1555617981-d2c673130d7c?w=500' },
+          { ID_Produk: 'PRD-004', Nama_Produk: 'Mouse Gaming Logitech G102 Lightsync', Kategori: 'Aksesoris', Harga_Jual: 245000, Stok: 15, Min_Stok: 4, Gambar_URL: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500' },
+          { ID_Produk: 'PRD-005', Nama_Produk: 'Jasa Install Ulang Windows 11 + Software', Kategori: 'Jasa Service', Harga_Jual: 75000, Stok: 999, Min_Stok: 0, Gambar_URL: 'https://images.unsplash.com/photo-1629654297299-c8506221ca97?w=500' }
+        ];
+        renderProductGrid();
+      }
+    }
+
+    function renderProductGrid() {
+      var container = document.getElementById('productGridContainer');
+      var keyword = (document.getElementById('barcodeSearchInput').value || '').toLowerCase();
+      var filtered = products.filter(function(p) {
+        var matchCat = (activeCategory === 'All' || p.Kategori === activeCategory);
+        var matchKey = (p.Nama_Produk.toLowerCase().indexOf(keyword) > -1 || String(p.ID_Produk).toLowerCase().indexOf(keyword) > -1);
+        return matchCat && matchKey;
+      });
+
+      var html = '';
+      filtered.forEach(function(p) {
+        var isLowStock = Number(p.Stok) <= Number(p.Min_Stok) && p.Kategori !== 'Jasa Service';
+        html += '<div class="product-card" onclick="addToCart(\'' + p.ID_Produk + '\')">' +
+          '<img src="' + (p.Gambar_URL || 'https://via.placeholder.com/150?text=Hiroshi') + '" class="product-thumb" alt="thumb">' +
+          '<div class="product-name">' + p.Nama_Produk + '</div>' +
+          '<div class="product-price">' + formatRupiah(p.Harga_Jual) + '</div>' +
+          '<div class="product-meta">' +
+            '<span>Stok: ' + p.Stok + '</span>' +
+            (isLowStock ? '<span class="badge-low-stock">Stok Menipis!</span>' : '') +
+          '</div>' +
+        '</div>';
+      });
+
+      container.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; color: #888; padding: 30px;">Tidak ada produk ditemukan</div>';
+    }
+
+    function filterCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(function(b) {
+        b.classList.toggle('active', b.innerText === cat || (cat === 'All' && b.innerText === 'Semua'));
+      });
+      renderProductGrid();
+    }
+
+    function filterProducts() {
+      renderProductGrid();
+    }
+
+    function addToCart(pId) {
+      var prod = products.find(function(p) { return String(p.ID_Produk) === String(pId); });
+      if (!prod) return;
+      if (Number(prod.Stok) <= 0 && prod.Kategori !== 'Jasa Service') {
+        alert('Stok produk habis!');
+        return;
+      }
+
+      var existing = cart.find(function(item) { return item.productId === pId; });
+      if (existing) {
+        if (existing.qty + 1 > prod.Stok && prod.Kategori !== 'Jasa Service') {
+          alert('Jumlah melebihi stok yang tersedia!');
+          return;
+        }
+        existing.qty += 1;
+        existing.subtotal = existing.qty * prod.Harga_Jual;
+      } else {
+        cart.push({
+          productId: prod.ID_Produk,
+          productName: prod.Nama_Produk,
+          price: Number(prod.Harga_Jual),
+          qty: 1,
+          subtotal: Number(prod.Harga_Jual),
+          serialNumber: '',
+          warranty: prod.Kategori === 'Laptop' ? '1 Tahun' : (prod.Kategori === 'Part PC' ? '1 Tahun' : '1 Bulan')
+        });
+      }
+      renderCart();
+    }
+
+    function updateCartQty(idx, delta) {
+      var itm = cart[idx];
+      var prod = products.find(function(p) { return p.ID_Produk === itm.productId; });
+      var newQty = itm.qty + delta;
+      if (newQty <= 0) {
+        cart.splice(idx, 1);
+      } else {
+        if (prod && newQty > prod.Stok && prod.Kategori !== 'Jasa Service') {
+          alert('Mencapai batas stok maksimum!');
+          return;
+        }
+        itm.qty = newQty;
+        itm.subtotal = itm.qty * itm.price;
+      }
+      renderCart();
+    }
+
+    function updateItemSN(idx, val) {
+      cart[idx].serialNumber = val;
+    }
+
+    function updateItemWarranty(idx, val) {
+      cart[idx].warranty = val;
+    }
+
+    function removeFromCart(idx) {
+      cart.splice(idx, 1);
+      renderCart();
+    }
+
+    function clearCart() {
+      cart = [];
+      renderCart();
+    }
+
+    function renderCart() {
+      var container = document.getElementById('cartItemsContainer');
+      if (cart.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px 0;">Keranjang masih kosong</div>';
+        recalcCart();
+        return;
+      }
+
+      var html = '';
+      cart.forEach(function(item, idx) {
+        html += '<div class="cart-item-card">' +
+          '<div class="cart-item-header">' +
+            '<span>' + item.productName + '</span>' +
+            '<button class="btn-remove-item" onclick="removeFromCart(' + idx + ')">&times;</button>' +
+          '</div>' +
+          '<div class="cart-inputs-row">' +
+            '<input type="text" class="cart-input" placeholder="Input Serial Number (SN)" value="' + (item.serialNumber || '') + '" onchange="updateItemSN(' + idx + ', this.value)">' +
+            '<select class="cart-input" onchange="updateItemWarranty(' + idx + ', this.value)">' +
+              '<option value="Tidak Ada" ' + (item.warranty === 'Tidak Ada' ? 'selected' : '') + '>Garansi: Tidak Ada</option>' +
+              '<option value="1 Bulan" ' + (item.warranty === '1 Bulan' ? 'selected' : '') + '>Garansi: 1 Bulan</option>' +
+              '<option value="3 Bulan" ' + (item.warranty === '3 Bulan' ? 'selected' : '') + '>Garansi: 3 Bulan</option>' +
+              '<option value="6 Bulan" ' + (item.warranty === '6 Bulan' ? 'selected' : '') + '>Garansi: 6 Bulan</option>' +
+              '<option value="1 Tahun" ' + (item.warranty === '1 Tahun' ? 'selected' : '') + '>Garansi: 1 Tahun</option>' +
+              '<option value="2 Tahun" ' + (item.warranty === '2 Tahun' ? 'selected' : '') + '>Garansi: 2 Tahun</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="cart-qty-row">' +
+            '<div class="qty-controls">' +
+              '<button class="btn-qty" onclick="updateCartQty(' + idx + ', -1)">-</button>' +
+              '<span style="font-weight: 700; font-size: 13px; min-width: 20px; text-align: center;">' + item.qty + '</span>' +
+              '<button class="btn-qty" onclick="updateCartQty(' + idx + ', 1)">+</button>' +
+            '</div>' +
+            '<div style="font-weight: 700; color: var(--primary-dark);">' + formatRupiah(item.subtotal) + '</div>' +
+          '</div>' +
+        '</div>';
+      });
+
+      container.innerHTML = html;
+      recalcCart();
+    }
+
+    function recalcCart() {
+      var subtotal = cart.reduce(function(acc, itm) { return acc + itm.subtotal; }, 0);
+      var discount = Number(document.getElementById('cartDiscountInput').value || 0);
+      var total = Math.max(0, subtotal - discount);
+      currentTrxTotal = total;
+
+      document.getElementById('cartSubtotalText').innerText = formatRupiah(subtotal);
+      document.getElementById('cartTotalText').innerText = formatRupiah(total);
+    }
+
+    function openPaymentModal() {
+      if (cart.length === 0) {
+        alert('Keranjang masih kosong!');
+        return;
+      }
+      document.getElementById('modalPayTotal').innerText = formatRupiah(currentTrxTotal);
+      document.getElementById('modalPayCash').value = currentTrxTotal;
+      calcChange();
+      document.getElementById('paymentModal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function onPaymentMethodChange() {
+      var m = document.getElementById('modalPayMethod').value;
+      var group = document.getElementById('groupUangDiterima');
+      if (m === 'Tunai') {
+        group.style.display = 'block';
+      } else {
+        group.style.display = 'none';
+        document.getElementById('modalPayCash').value = currentTrxTotal;
+        calcChange();
+      }
+    }
+
+    function calcChange() {
+      var cash = Number(document.getElementById('modalPayCash').value || 0);
+      var change = Math.max(0, cash - currentTrxTotal);
+      document.getElementById('modalPayChange').innerText = formatRupiah(change);
+    }
+
+    function confirmPayment() {
+      var method = document.getElementById('modalPayMethod').value;
+      var cash = Number(document.getElementById('modalPayCash').value || 0);
+      if (method === 'Tunai' && cash < currentTrxTotal) {
+        alert('Uang yang diterima kurang dari total belanja!');
+        return;
+      }
+
+      var subtotal = cart.reduce(function(acc, itm) { return acc + itm.subtotal; }, 0);
+      var discount = Number(document.getElementById('cartDiscountInput').value || 0);
+
+      var trxData = {
+        cashier: currentUser.username,
+        subtotal: subtotal,
+        discount: discount,
+        total: currentTrxTotal,
+        paymentMethod: method,
+        items: cart
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res.success) {
+              trxData.id = res.transactionId;
+              lastSavedTrx = trxData;
+              closeModal('paymentModal');
+              showReceiptPreview(trxData);
+              cart = [];
+              renderCart();
+              loadInitialData(); // Refresh stok
+            } else {
+              alert('Gagal menyimpan transaksi: ' + res.message);
+            }
+          })
+          .saveTransaction(trxData);
+      } else {
+        trxData.id = 'TRX-' + new Date().getTime();
+        lastSavedTrx = trxData;
+        closeModal('paymentModal');
+        showReceiptPreview(trxData);
+        cart = [];
+        renderCart();
+      }
+    }
+
+    function showReceiptPreview(trx) {
+      var container = document.getElementById('receiptContentContainer');
+      var dateStr = new Date().toLocaleString('id-ID');
+      var itemsHtml = '';
+      trx.items.forEach(function(itm) {
+        itemsHtml += '<div>' + itm.productName + '</div>' +
+          '<div style="display:flex; justify-content:space-between; font-size:11px; color:#555;">' +
+            '<span>' + itm.qty + ' x ' + formatRupiah(itm.price) + '</span>' +
+            '<span>' + formatRupiah(itm.subtotal) + '</span>' +
+          '</div>' +
+          (itm.serialNumber ? '<div style="font-size:10px; color:#777;">SN: ' + itm.serialNumber + '</div>' : '') +
+          '<div style="font-size:10px; color:#777;">Garansi: ' + (itm.warranty || 'Tidak Ada') + '</div>';
+      });
+
+      var html = '<div class="receipt-paper">' +
+        '<div style="text-align:center; font-weight:bold; font-size:14px;">HIROSHI COMPUTER</div>' +
+        '<div style="text-align:center; font-size:11px;">Jl. Ahmad Yani No. 88, IT Solutions</div>' +
+        '<div style="text-align:center; font-size:11px;">Telp/WA: 0812-3456-7890</div>' +
+        '<div style="border-top:1px dashed #000; margin:8px 0;"></div>' +
+        '<div style="display:flex; justify-content:space-between; font-size:10px;">' +
+          '<span>No: ' + trx.id + '</span>' +
+          '<span>Kasir: ' + trx.cashier + '</span>' +
+        '</div>' +
+        '<div style="font-size:10px;">Tgl: ' + dateStr + '</div>' +
+        '<div style="border-top:1px dashed #000; margin:8px 0;"></div>' +
+        itemsHtml +
+        '<div style="border-top:1px dashed #000; margin:8px 0;"></div>' +
+        '<div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>' + formatRupiah(trx.subtotal) + '</span></div>' +
+        '<div style="display:flex; justify-content:space-between;"><span>Diskon:</span><span>' + formatRupiah(trx.discount) + '</span></div>' +
+        '<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;"><span>TOTAL:</span><span>' + formatRupiah(trx.total) + '</span></div>' +
+        '<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Metode:</span><span>' + trx.paymentMethod + '</span></div>' +
+        '<div style="border-top:1px dashed #000; margin:8px 0;"></div>' +
+        '<div style="text-align:center; font-size:10px;">Terima kasih atas kunjungan Anda!</div>' +
+        '<div style="text-align:center; font-size:9px; color:#555;">Barang bergaransi wajib menyertakan struk ini</div>' +
+      '</div>';
+
+      container.innerHTML = html;
+      document.getElementById('receiptModal').style.display = 'flex';
+    }
+
+    function sendWhatsAppNotification(phone, id, name, device, status, cost, complaint) {
+      var clean = phone.replace(/[^0-9]/g, '');
+      if (clean.startsWith('0')) clean = '62' + clean.slice(1);
+      var text = 'Halo Kak *' + name + '*,\nKami dari *Hiroshi Computer* ingin menginformasikan update status service:\n\n' +
+        '📌 No Service: *' + id + '*\n' +
+        '💻 Perangkat: ' + device + '\n' +
+        '🔄 Status: *' + status.toUpperCase() + '*\n' +
+        '💰 Estimasi Biaya: ' + formatRupiah(cost) + '\n\n' +
+        'Terima kasih telah mempercayakan perbaikan perangkat Anda kepada kami.';
+      var url = 'https://wa.me/' + clean + '?text=' + encodeURIComponent(text);
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "Hiroshi Computer POS",
+  "description": "Aplikasi POS Toko Komputer & Manajemen Service IT Hiroshi Computer dengan pencatatan Serial Number, Garansi, Absensi Wajah & Lokasi, dan Generator Google Apps Script.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

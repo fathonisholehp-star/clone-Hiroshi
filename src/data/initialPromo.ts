@@ -1,0 +1,118 @@
+import { PromoSlide, PcBundle, PromoCoupon } from '../types';
+
+export const INITIAL_PROMO_SLIDES: PromoSlide[] = [
+  {
+    id: 1,
+    badge: 'PROMO SPESIAL BULAN INI',
+    title: 'MEGA SALE RAKIT PC GAMING & KONTEN KREATOR',
+    subtitle: 'Dapatkan diskon paket rakitan hingga 25% + Free Perakitan, Cable Management & Lisensi Windows 11!',
+    discountBadge: 'HEMAT S/D RP 1.500.000',
+    actionText: 'Lihat Paket Rakitan',
+    accentColor: 'from-cyan-500 to-blue-600',
+    bgGlow: 'bg-cyan-500/10',
+    img: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 2,
+    badge: 'UPGRADE HARDWARE BOOSTER',
+    title: 'UPGRADE SSD NVME & RAM DDR4/DDR5 SUPER CEPAT',
+    subtitle: 'Laptop/PC lambat? Upgrade ke SSD NVMe Gen4 & RAM Dual Channel. Gratis kloning Windows tanpa hilang data!',
+    discountBadge: 'DISKON HINGGA 20%',
+    actionText: 'Cek Promo Part PC',
+    accentColor: 'from-amber-500 to-orange-600',
+    bgGlow: 'bg-amber-500/10',
+    img: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=1000&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 3,
+    badge: 'IT SERVICE & MAINTENANCE CLINIC',
+    title: 'DEEP CLEANING & RE-PASTE THERMAL PASTE PREMIUM',
+    subtitle: 'Cegah overheat dan drop FPS pada PC & Laptop Anda. Menggunakan pasta termal Arctic MX-4 berpendingin tinggi.',
+    discountBadge: 'HANYA RP 75.000 (DARI RP 120.000)',
+    actionText: 'Konsultasi Service',
+    accentColor: 'from-emerald-500 to-teal-600',
+    bgGlow: 'bg-emerald-500/10',
+    img: 'https://images.unsplash.com/photo-1563770660941-20978e870e26?w=1000&auto=format&fit=crop&q=80',
+  },
+];
+
+export const INITIAL_COUPONS: PromoCoupon[] = [
+  {
+    id: 'coup-1',
+    code: 'HIROSHIPC150',
+    title: 'Diskon Rakit PC Baru',
+    nominal: 'Potongan Rp 150.000',
+    minSpend: 'Min. belanja Rp 4.000.000',
+    tag: 'Paket PC',
+  },
+  {
+    id: 'coup-2',
+    code: 'UPGRADESSD',
+    title: 'Diskon SSD & RAM',
+    nominal: 'Potongan 15%',
+    minSpend: 'Free Jasa Pasang & Kloning',
+    tag: 'Hardware',
+  },
+  {
+    id: 'coup-3',
+    code: 'CLEANING50',
+    title: 'Perawatan Laptop/PC',
+    nominal: 'Cashback Rp 25.000',
+    minSpend: 'Jasa Service & Deep Clean',
+    tag: 'Service IT',
+  },
+];
+
+export const INITIAL_PC_BUNDLES: PcBundle[] = [
+  {
+    id: 'bundle-1',
+    name: 'Paket PC Office & Administrasi Hemat',
+    category: 'Office / Kasir / Sekolah',
+    specs: [
+      'Intel Core i3-10105 (3.7GHz Turbo 4.4GHz)',
+      'Motherboard H510M Solid Caps',
+      'RAM 8GB DDR4 2666MHz Kingston',
+      'SSD 256GB NVMe M.2 Ultra Fast Boot',
+      'Casing Micro-ATX Slim + PSU 450W',
+      'Windows 11 Pro + Office Siap Pakai',
+    ],
+    originalPrice: 4250000,
+    promoPrice: 3650000,
+    badge: 'HEMAT RP 600.000',
+    isHot: false,
+  },
+  {
+    id: 'bundle-2',
+    name: 'Paket Gaming eSports & Streamer Starter',
+    category: 'Valorant / GTA V / Dota 2 / Genshin',
+    specs: [
+      'AMD Ryzen 5 5600 6-Core 12-Threads',
+      'VGA NVIDIA GeForce GTX 1650 / RX 6600',
+      'RAM 16GB (2x8GB) Dual Channel DDR4 3200',
+      'SSD 512GB NVMe PCIe Gen 3.0',
+      'PSU 550W 80+ Bronze Certified',
+      'Casing Gaming Tempered Glass + 3x RGB Fan',
+    ],
+    originalPrice: 8400000,
+    promoPrice: 7250000,
+    badge: 'BEST SELLER 🔥',
+    isHot: true,
+  },
+  {
+    id: 'bundle-3',
+    name: 'Paket Beast Creator & 2K Gaming Pro',
+    category: 'Rendering 4K / Blender / AAA Gaming',
+    specs: [
+      'Intel Core i7-12700F / Ryzen 7 5700X',
+      'VGA RTX 4060 8GB GDDR6 Dual Fan',
+      'Motherboard B660M / B550 Pro Gaming',
+      'RAM 32GB (2x16GB) Corsair 3200MHz',
+      'SSD 1TB NVMe PCIe 4.0 (Up to 5000MB/s)',
+      'PSU 650W 80+ Bronze Modular',
+    ],
+    originalPrice: 16200000,
+    promoPrice: 14750000,
+    badge: 'POTONGAN RP 1.450.000',
+    isHot: false,
+  },
+];
