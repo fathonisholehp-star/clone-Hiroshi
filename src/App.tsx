@@ -36,6 +36,11 @@ import {
   INITIAL_STORE_SETTINGS,
 } from './data/initialData';
 import { generateLogId } from './utils/formatters';
+import {
+  syncTransactionToSheets,
+  syncServiceToSheets,
+  syncAttendanceToSheets,
+} from './utils/googleSheetsSync';
 
 export default function App() {
   // State with LocalStorage fallbacks
@@ -270,6 +275,19 @@ export default function App() {
       setStockLogs((prev) => [...newLogs, ...prev]);
     }
 
+    // Auto-sync ke Google Sheets jika URL Web App sudah terpasang
+    if (
+      storeSettings.googleSheetsSettings?.webAppUrl &&
+      storeSettings.googleSheetsSettings.autoSyncTransactions !== false
+    ) {
+      syncTransactionToSheets(
+        storeSettings.googleSheetsSettings.webAppUrl,
+        newTrx
+      ).catch((err) => {
+        console.warn('[Google Sheets Sync] Transaksi offline/pending:', err);
+      });
+    }
+
     showToast(`Transaksi ${newTrx.id} berhasil dicatat &amp; stok diperbarui.`);
   };
 
@@ -397,6 +415,19 @@ export default function App() {
       );
       showToast(`Tiket service ${order.id} diperbarui.`);
     }
+
+    // Auto-sync servis ke Google Sheets
+    if (
+      storeSettings.googleSheetsSettings?.webAppUrl &&
+      storeSettings.googleSheetsSettings.autoSyncServices !== false
+    ) {
+      syncServiceToSheets(
+        storeSettings.googleSheetsSettings.webAppUrl,
+        order
+      ).catch((err) => {
+        console.warn('[Google Sheets Sync] Service order offline/pending:', err);
+      });
+    }
   };
 
   // Update Service Status
@@ -467,6 +498,19 @@ export default function App() {
   const handleSaveAttendance = (record: AttendanceRecord) => {
     setAttendanceRecords((prev) => [record, ...prev]);
     showToast(`Presensi ${record.type} untuk ${record.userName} berhasil disimpan.`);
+
+    // Auto-sync absensi ke Google Sheets
+    if (
+      storeSettings.googleSheetsSettings?.webAppUrl &&
+      storeSettings.googleSheetsSettings.autoSyncAttendance !== false
+    ) {
+      syncAttendanceToSheets(
+        storeSettings.googleSheetsSettings.webAppUrl,
+        record
+      ).catch((err) => {
+        console.warn('[Google Sheets Sync] Absensi offline/pending:', err);
+      });
+    }
   };
 
   // Reset to Factory Demo Data
@@ -661,7 +705,19 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'gas' && isTabAllowedForRole('gas', currentUser.role) && <GasTab />}
+        {activeTab === 'gas' && isTabAllowedForRole('gas', currentUser.role) && (
+          <GasTab
+            storeSettings={storeSettings}
+            onUpdateSettings={(newSettings) => {
+              setStoreSettings(newSettings);
+              showToast('Konfigurasi Google Sheets berhasil diperbarui.');
+            }}
+            products={products}
+            transactions={transactions}
+            services={services}
+            attendance={attendanceRecords}
+          />
+        )}
 
         {/* Unauthorized Fallback Guard */}
         {!isTabAllowedForRole(activeTab, currentUser.role) && (

@@ -178,6 +178,14 @@ export interface GeofenceSettings {
 
 export type StoreTheme = 'dark-stealth' | 'titanium-clean' | 'classic-blue';
 
+export interface GoogleSheetsSettings {
+  webAppUrl: string;
+  autoSyncTransactions: boolean;
+  autoSyncServices: boolean;
+  autoSyncAttendance: boolean;
+  lastSyncTime?: string;
+}
+
 export interface StoreSettings {
   theme?: StoreTheme;
   storeName: string;
@@ -191,6 +199,7 @@ export interface StoreSettings {
   showLogoInHeader: boolean;
   printSettings: PrintSettings;
   geofenceSettings: GeofenceSettings;
+  googleSheetsSettings?: GoogleSheetsSettings;
 }
 
 export interface PromoSlide {

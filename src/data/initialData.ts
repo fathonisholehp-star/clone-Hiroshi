@@ -391,5 +391,12 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
     workStartHour: '08:30',
     workEndHour: '18:00',
   },
+  googleSheetsSettings: {
+    webAppUrl: '',
+    autoSyncTransactions: true,
+    autoSyncServices: true,
+    autoSyncAttendance: true,
+    lastSyncTime: '',
+  },
 };
 
