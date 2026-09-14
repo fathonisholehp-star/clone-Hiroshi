@@ -10,9 +10,11 @@ import {
   Share2,
   Copy,
   Check,
+  ExternalLink,
 } from 'lucide-react';
 import { Transaction, StoreSettings, PrinterType } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { printReceiptElement, openReceiptInNewTab } from '../utils/printReceiptHelper';
 
 interface ReceiptModalProps {
   transaction: Transaction | null;
@@ -35,18 +37,33 @@ export default function ReceiptModal({
   const [selectedPrinter, setSelectedPrinter] = useState<PrinterType>(initialPrinter);
   const [copies, setCopies] = useState<number>(pSettings?.printCopies || 1);
   const [copiedText, setCopiedText] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     if (transaction && pSettings?.autoPrintDialog) {
       const timer = setTimeout(() => {
-        window.print();
+        handlePrint();
       }, 400);
       return () => clearTimeout(timer);
     }
   }, [transaction?.id, pSettings?.autoPrintDialog]);
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    await printReceiptElement('sales-receipt-print-area', {
+      title: `Struk-${transaction.id}`,
+      printerType: selectedPrinter,
+      copies: copies,
+    });
+    setIsPrinting(false);
+  };
+
+  const handleOpenCleanTab = () => {
+    openReceiptInNewTab('sales-receipt-print-area', {
+      title: `Struk-${transaction.id}`,
+      printerType: selectedPrinter,
+      copies: copies,
+    });
   };
 
   const storeName = storeSettings?.storeName || 'HIROSHI COMPUTER';
@@ -671,7 +688,7 @@ export default function ReceiptModal({
 
         {/* Scrollable Printable Document Container */}
         <div className="p-4 sm:p-6 overflow-y-auto bg-gray-200/70 print:bg-white print:p-0 flex-1">
-          <div className="space-y-6">
+          <div id="sales-receipt-print-area" className="space-y-6">
             {/* Copy 1 */}
             <div
               id="printable-sales-receipt"
@@ -683,7 +700,7 @@ export default function ReceiptModal({
             {/* Copy 2 if requested */}
             {copies > 1 && (
               <div
-                className={`receipt-paper bg-white border border-dashed border-gray-400 p-5 rounded-lg shadow-md print:shadow-none print:border-none print:p-0 mx-auto transition-all print:break-before-page ${printerProfiles.widthClass}`}
+                className={`receipt-paper bg-white border border-dashed border-gray-400 p-5 rounded-lg shadow-md print:shadow-none print:border-none print:p-0 mx-auto transition-all page-break print:break-before-page ${printerProfiles.widthClass}`}
               >
                 {renderReceiptContent(2)}
               </div>
@@ -697,7 +714,17 @@ export default function ReceiptModal({
             Printer aktif: <strong className="text-gray-800">{printerProfiles.label}</strong>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handleOpenCleanTab}
+              className="py-2.5 px-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Buka Struk Bersih di Tab Baru"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">Tab Baru</span>
+            </button>
+
             <button
               id="btn-close-receipt-bottom"
               type="button"
@@ -711,10 +738,11 @@ export default function ReceiptModal({
               id="btn-print-receipt"
               type="button"
               onClick={handlePrint}
-              className="py-2.5 px-6 rounded-xl bg-linear-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+              disabled={isPrinting}
+              className="py-2.5 px-5 sm:px-6 rounded-xl bg-linear-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-60"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak Sekarang ({printerProfiles.label})</span>
+              <span>{isPrinting ? 'Menyiapkan Cetak...' : `Cetak Sekarang (${printerProfiles.label})`}</span>
             </button>
           </div>
         </div>

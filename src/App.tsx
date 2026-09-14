@@ -973,7 +973,7 @@ export default function App() {
       </main>
 
       {/* 4. Footer (Desktop) */}
-      <footer className={`border-t py-3 px-4 text-center text-xs hidden sm:block transition-colors ${
+      <footer className={`border-t py-3 px-4 text-center text-xs hidden sm:block transition-colors print:hidden ${
         activeTheme === 'dark-stealth'
           ? 'bg-[#0B0F19] border-slate-800 text-slate-400'
           : activeTheme === 'titanium-clean'

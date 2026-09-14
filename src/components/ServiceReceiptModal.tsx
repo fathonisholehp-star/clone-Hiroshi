@@ -15,9 +15,11 @@ import {
   Send,
   Wrench,
   Layers,
+  ExternalLink,
 } from 'lucide-react';
 import { ServiceOrder, StoreSettings, PrinterType } from '../types';
 import { formatCurrency, createWhatsAppServiceUrl } from '../utils/formatters';
+import { printReceiptElement, openReceiptInNewTab } from '../utils/printReceiptHelper';
 
 interface ServiceReceiptModalProps {
   order: ServiceOrder | null;
@@ -45,6 +47,7 @@ export default function ServiceReceiptModal({
     storeSettings?.printSettings?.servicePrintSettings?.copies || 1
   );
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const pSettings = storeSettings?.printSettings;
   const srvSettings = pSettings?.servicePrintSettings;
@@ -55,8 +58,22 @@ export default function ServiceReceiptModal({
   const city = storeSettings?.city || 'Kartasura';
   const phone = storeSettings?.phone || '085876500029';
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    await printReceiptElement('service-receipt-print-area', {
+      title: `Nota-Servis-${order.id}`,
+      printerType: selectedPrinter,
+      copies: copies,
+    });
+    setIsPrinting(false);
+  };
+
+  const handleOpenCleanTab = () => {
+    openReceiptInNewTab('service-receipt-print-area', {
+      title: `Nota-Servis-${order.id}`,
+      printerType: selectedPrinter,
+      copies: copies,
+    });
   };
 
   const handleCopySummary = () => {
@@ -115,7 +132,7 @@ export default function ServiceReceiptModal({
       label: 'Dot Matrix NCR',
       sublabel: 'Epson LX-310 / Rangkap',
       badge: 'Continuous 2-Ply',
-      widthClass: 'w-[520px]',
+      widthClass: 'w-full max-w-[720px]',
     },
     'inkjet-a5': {
       id: 'inkjet-a5',
@@ -306,7 +323,7 @@ export default function ServiceReceiptModal({
     if (isDotMatrix) {
       // Dot matrix continuous form paper style
       return (
-        <div className="font-mono text-[11px] text-black leading-tight space-y-1.5 bg-[#FEFDF9] p-2 border border-gray-400">
+        <div className="font-mono text-[11px] text-black leading-snug space-y-1.5 bg-white p-3 border border-black dot-matrix-box">
           <div className="flex justify-between items-start border-b border-black pb-1">
             <div>
               <div className="font-bold text-sm tracking-wide uppercase">{storeName}</div>
@@ -799,7 +816,7 @@ export default function ServiceReceiptModal({
 
         {/* Scrollable Printable Document Container */}
         <div className="p-4 sm:p-6 overflow-y-auto bg-gray-200/70 print:bg-white print:p-0 flex-1">
-          <div className="space-y-6">
+          <div id="service-receipt-print-area" className="space-y-6">
             {/* Copy 1 */}
             <div
               id="printable-service-sheet"
@@ -811,7 +828,7 @@ export default function ServiceReceiptModal({
             {/* Copy 2 if requested */}
             {copies > 1 && (
               <div
-                className={`receipt-paper bg-white border border-dashed border-gray-400 p-5 rounded-lg shadow-md print:shadow-none print:border-none print:p-0 mx-auto transition-all print:break-before-page ${printerProfiles.widthClass}`}
+                className={`receipt-paper bg-white border border-dashed border-gray-400 p-5 rounded-lg shadow-md print:shadow-none print:border-none print:p-0 mx-auto transition-all page-break print:break-before-page ${printerProfiles.widthClass}`}
               >
                 {renderDocumentContent(2)}
               </div>
@@ -825,7 +842,17 @@ export default function ServiceReceiptModal({
             Printer aktif: <strong className="text-gray-800">{printerProfiles.label}</strong> ({printerProfiles.badge})
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handleOpenCleanTab}
+              className="py-2.5 px-3 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Buka Nota Bersih di Tab Baru"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">Tab Baru</span>
+            </button>
+
             <button
               type="button"
               onClick={onClose}
@@ -838,10 +865,11 @@ export default function ServiceReceiptModal({
               id="btn-print-service-document"
               type="button"
               onClick={handlePrint}
-              className="py-2.5 px-6 rounded-xl bg-linear-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+              disabled={isPrinting}
+              className="py-2.5 px-5 sm:px-6 rounded-xl bg-linear-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-60"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak Sekarang ({printerProfiles.label})</span>
+              <span>{isPrinting ? 'Menyiapkan Cetak...' : `Cetak Sekarang (${printerProfiles.label})`}</span>
             </button>
           </div>
         </div>

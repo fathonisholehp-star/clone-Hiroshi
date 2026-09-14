@@ -179,3 +179,97 @@
   color: inherit !important;
 }
 
+/* =========================================================
+   PRINT SPECIFIC MEDIA STYLES (Clean POS / Dot Matrix / Laser)
+   ========================================================= */
+@media print {
+  /* 1. Sembunyikan semua navigasi, header website, footer, modal backdrop & toolbar tombol */
+  header,
+  nav,
+  footer,
+  aside,
+  #header-root,
+  .print\:hidden,
+  .no-print,
+  button,
+  [role="dialog"] > div > div:first-child:not(#printable-service-sheet):not(#printable-sales-receipt),
+  [id$="-modal-backdrop"] > div > div:first-child:not(#printable-service-sheet):not(#printable-sales-receipt),
+  [id$="-modal-backdrop"] > div > div:nth-child(2):not(#printable-service-sheet):not(#printable-sales-receipt),
+  [id$="-modal-backdrop"] > div > div:last-child {
+    display: none !important;
+  }
+
+  /* 2. Reset Background Canvas & Margin Kertas */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  /* Hilangkan backdrop gelap dan batasan max-height modal */
+  #service-receipt-modal-backdrop,
+  #receipt-modal-backdrop,
+  .fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Hilangkan card shell modal pembungkus agar hanya nota yang tercetak */
+  #service-receipt-modal-backdrop > div,
+  #receipt-modal-backdrop > div {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Receipt Paper Style saat cetak */
+  .receipt-paper {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Dot matrix continuous slip sharp print */
+  .dot-matrix-paper {
+    width: 100% !important;
+    max-width: 100% !important;
+    border: 1px solid #000000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'JetBrains Mono', 'Courier New', Consolas, monospace !important;
+  }
+
+  /* Pemisah halaman antar rangkap */
+  .page-break,
+  .print\:break-before-page {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+}
+
+

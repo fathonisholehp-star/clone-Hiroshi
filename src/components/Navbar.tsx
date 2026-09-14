@@ -94,7 +94,7 @@ export default function Navbar({
       {/* DESKTOP & TABLET TOP NAVIGATION */}
       <nav
         id="desktop-tablet-navbar"
-        className={`${navContainerBg} sticky top-[57px] z-30 hidden sm:block transition-colors`}
+        className={`${navContainerBg} sticky top-[57px] z-30 hidden sm:block transition-colors print:hidden`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center space-x-1 overflow-x-auto py-1 scrollbar-none">
@@ -159,7 +159,7 @@ export default function Navbar({
       {/* SMARTPHONE BOTTOM NAVIGATION BAR (Pengoperasian Satu Tangan) */}
       <nav
         id="smartphone-bottom-navbar"
-        className={`sm:hidden fixed bottom-0 left-0 right-0 z-40 px-1 py-1.5 flex justify-around items-center border-t transition-colors ${
+        className={`sm:hidden fixed bottom-0 left-0 right-0 z-40 px-1 py-1.5 flex justify-around items-center border-t transition-colors print:hidden ${
           isDark
             ? 'bg-[#0B0F19] border-slate-800 shadow-2xl text-slate-400'
             : 'bg-white border-gray-200 shadow-lg text-gray-500'

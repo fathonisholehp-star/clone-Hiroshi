@@ -27,6 +27,7 @@ import {
 import { StoreSettings, User, PrinterType, ServicePrintSettings } from '../types';
 import { INITIAL_STORE_SETTINGS } from '../data/initialData';
 import { formatCurrency } from '../utils/formatters';
+import { printReceiptElement } from '../utils/printReceiptHelper';
 
 interface SettingsTabProps {
   currentUser: User;
@@ -194,7 +195,14 @@ export default function SettingsTab({
 
   // Trigger Print Test
   const handleTestPrint = () => {
-    window.print();
+    const targetId =
+      previewDocType === 'sales'
+        ? 'settings-preview-receipt'
+        : 'settings-preview-service-receipt';
+    printReceiptElement(targetId, {
+      title: `Tes-Cetak-${previewDocType === 'sales' ? 'Kasir' : 'Servis'}`,
+      printerType: previewPrinter,
+    });
   };
 
   // Sample data for live receipt preview
@@ -1475,6 +1483,7 @@ export default function SettingsTab({
                         ? '13px'
                         : '12px',
                   }}
+                  id="settings-preview-receipt"
                   className={`font-mono text-gray-900 bg-white border border-dashed border-gray-400 p-4 rounded-xs shadow-md transition-all ${
                     previewPrinter === 'thermal-58'
                       ? 'w-[280px]'
@@ -1611,6 +1620,7 @@ export default function SettingsTab({
               {/* 2. SERVICE HANDOVER RECEIPT PREVIEW */}
               {previewDocType === 'service' && (
                 <div
+                  id="settings-preview-service-receipt"
                   className={`font-sans text-gray-900 bg-white border border-gray-300 p-4 rounded-xs shadow-md transition-all text-xs ${
                     previewPrinter === 'thermal-58'
                       ? 'w-[280px] font-mono text-[11px]'

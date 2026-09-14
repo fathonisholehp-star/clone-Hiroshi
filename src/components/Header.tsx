@@ -86,7 +86,7 @@ export default function Header({
       : 'bg-linear-to-r from-[#0D47A1] via-[#1565C0] to-[#1E88E5] text-white shadow-md';
 
   return (
-    <header id="main-app-header" className={`${headerBgClass} px-4 sm:px-6 py-2.5 sticky top-0 z-40 transition-colors`}>
+    <header id="main-app-header" className={`${headerBgClass} px-4 sm:px-6 py-2.5 sticky top-0 z-40 transition-colors print:hidden`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         {/* Left: Brand Identity & Hardware Store Badge */}
         <div className="flex items-center gap-3">
