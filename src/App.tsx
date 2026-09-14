@@ -10,6 +10,7 @@ import UserTab from './components/UserTab';
 import GasTab from './components/GasTab';
 import AttendanceTab from './components/AttendanceTab';
 import SettingsTab from './components/SettingsTab';
+import PromoManagerTab from './components/PromoManagerTab';
 import ReceiptModal from './components/ReceiptModal';
 import LoginModal from './components/LoginModal';
 import PromoLanding from './components/PromoLanding';
@@ -244,7 +245,7 @@ export default function App() {
       return ['absensi', 'service', 'kasir'].includes(tab);
     }
     if (role === 'Kasir') {
-      return !['user', 'pengaturan'].includes(tab);
+      return !['user', 'pengaturan', 'promosi'].includes(tab);
     }
     return false;
   };
@@ -255,7 +256,7 @@ export default function App() {
       if (currentUser.role === 'Teknisi') {
         showToast('Akses dibatasi: Teknisi hanya diberi akses Presensi Karyawan, Work Order Service IT, dan Kasir & Penjualan.');
       } else if (currentUser.role === 'Kasir') {
-        showToast('Akses dibatasi: Kasir tidak memiliki akses ke Manajemen User dan Pengaturan Toko.');
+        showToast('Akses dibatasi: Kasir tidak memiliki akses ke Kelola Promosi, Manajemen User, dan Pengaturan Toko.');
       } else {
         showToast('Akses dibatasi untuk peran pengguna Anda.');
       }
@@ -911,6 +912,13 @@ export default function App() {
             transactions={transactions}
             storeSettings={storeSettings}
             currentUser={currentUser}
+          />
+        )}
+
+        {activeTab === 'promosi' && isTabAllowedForRole('promosi', currentUser.role) && (
+          <PromoManagerTab
+            currentUser={currentUser}
+            onOpenPromoDisplay={() => setViewMode('promo')}
           />
         )}
 

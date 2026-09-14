@@ -27,10 +27,26 @@ import {
   HardDrive,
   Monitor,
   Package,
+  Plus,
+  Edit3,
+  Trash2,
+  RotateCcw,
+  Eye,
+  Info,
 } from 'lucide-react';
-import { Product, ServiceOrder, StoreSettings, User } from '../types';
+import { Product, ServiceOrder, StoreSettings, User, PromoSlide, PcBundle, PromoCoupon } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { INITIAL_PROMO_SLIDES, INITIAL_COUPONS, INITIAL_PC_BUNDLES } from '../data/initialPromo';
+import {
+  SlideModal,
+  BundleModal,
+  CouponModal,
+  DeletePromoModal,
+} from './promo/PromoModals';
+
+const STORAGE_KEY_PROMO_SLIDES = 'hiroshi_pos_promo_slides';
+const STORAGE_KEY_PC_BUNDLES = 'hiroshi_pos_pc_bundles';
+const STORAGE_KEY_COUPONS = 'hiroshi_pos_promo_coupons';
 
 interface PromoLandingProps {
   products: Product[];
@@ -88,18 +104,286 @@ export default function PromoLanding({
     return () => clearInterval(timer);
   }, []);
 
-  const promoSlides = INITIAL_PROMO_SLIDES;
-  const coupons = INITIAL_COUPONS;
-  const pcBundles = INITIAL_PC_BUNDLES;
+  // Dynamic Persistent Promo States (Saved to LocalStorage)
+  const [promoSlides, setPromoSlides] = useState<PromoSlide[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_PROMO_SLIDES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load promo slides', e);
+    }
+    return INITIAL_PROMO_SLIDES;
+  });
 
-  // Auto carousel rotation
+  const [pcBundles, setPcBundles] = useState<PcBundle[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_PC_BUNDLES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load pc bundles', e);
+    }
+    return INITIAL_PC_BUNDLES;
+  });
+
+  const [coupons, setCoupons] = useState<PromoCoupon[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_COUPONS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load coupons', e);
+    }
+    return INITIAL_COUPONS;
+  });
+
+  // Edit Mode & Feedback State (Hanya Admin yang diizinkan mengedit/mengubah)
+  const isAdmin = currentUser?.role === 'Admin';
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [toastAlert, setToastAlert] = useState<string | null>(null);
+
+  // Otomatis matikan edit mode bila pengguna bukan Admin
   useEffect(() => {
-    if (promoSlides.length <= 1) return;
+    if (!isAdmin && isEditMode) {
+      setIsEditMode(false);
+    }
+  }, [isAdmin, isEditMode]);
+
+  const showToast = (msg: string) => {
+    setToastAlert(msg);
+    setTimeout(() => setToastAlert(null), 3000);
+  };
+
+  // Modals state
+  const [slideModalOpen, setSlideModalOpen] = useState(false);
+  const [editingSlide, setEditingSlide] = useState<PromoSlide | null>(null);
+
+  const [bundleModalOpen, setBundleModalOpen] = useState(false);
+  const [editingBundle, setEditingBundle] = useState<PcBundle | null>(null);
+
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<PromoCoupon | null>(null);
+
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean;
+    itemTitle: string;
+    itemType: 'banner' | 'bundle' | 'coupon';
+    itemId: string | number;
+  }>({
+    isOpen: false,
+    itemTitle: '',
+    itemType: 'banner',
+    itemId: '',
+  });
+
+  // Automatically save changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_PROMO_SLIDES, JSON.stringify(promoSlides));
+    } catch (e) {
+      console.error('Error saving promo slides', e);
+    }
+  }, [promoSlides]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_PC_BUNDLES, JSON.stringify(pcBundles));
+    } catch (e) {
+      console.error('Error saving pc bundles', e);
+    }
+  }, [pcBundles]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_COUPONS, JSON.stringify(coupons));
+    } catch (e) {
+      console.error('Error saving coupons', e);
+    }
+  }, [coupons]);
+
+  // Keep activeSlide within bounds if slides are removed
+  useEffect(() => {
+    if (activeSlide >= promoSlides.length) {
+      setActiveSlide(Math.max(0, promoSlides.length - 1));
+    }
+  }, [promoSlides.length, activeSlide]);
+
+  // Auto carousel rotation (pauses during editing mode or modal opening)
+  useEffect(() => {
+    if (promoSlides.length <= 1 || isEditMode || slideModalOpen) return;
     const slideInterval = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % promoSlides.length);
     }, 6000);
     return () => clearInterval(slideInterval);
-  }, [promoSlides.length]);
+  }, [promoSlides.length, isEditMode, slideModalOpen]);
+
+  // === CRUD HANDLERS: BANNER SLIDES (Hanya Admin) ===
+  const handleOpenAddSlide = () => {
+    if (!isAdmin) return;
+    setEditingSlide(null);
+    setSlideModalOpen(true);
+  };
+
+  const handleOpenEditSlide = (slide: PromoSlide) => {
+    if (!isAdmin) return;
+    setEditingSlide(slide);
+    setSlideModalOpen(true);
+  };
+
+  const handleSaveSlide = (savedSlide: PromoSlide) => {
+    if (!isAdmin) return;
+    const idx = promoSlides.findIndex((s) => String(s.id) === String(savedSlide.id));
+    if (idx >= 0) {
+      const updated = [...promoSlides];
+      updated[idx] = savedSlide;
+      setPromoSlides(updated);
+      showToast('Banner slide promo berhasil diperbarui!');
+    } else {
+      setPromoSlides([...promoSlides, savedSlide]);
+      setActiveSlide(promoSlides.length);
+      showToast('Banner slide promo baru berhasil ditambahkan!');
+    }
+    setSlideModalOpen(false);
+  };
+
+  const promptDeleteSlide = (slide: PromoSlide) => {
+    if (!isAdmin) return;
+    if (promoSlides.length <= 1) {
+      alert('Minimal harus ada 1 banner promo yang aktif!');
+      return;
+    }
+    setDeleteModalState({
+      isOpen: true,
+      itemTitle: slide.title || 'Banner Slide',
+      itemType: 'banner',
+      itemId: slide.id,
+    });
+  };
+
+  // === CRUD HANDLERS: PAKET RAKIT PC (Hanya Admin) ===
+  const handleOpenAddBundle = () => {
+    if (!isAdmin) return;
+    setEditingBundle(null);
+    setBundleModalOpen(true);
+  };
+
+  const handleOpenEditBundle = (bundle: PcBundle) => {
+    if (!isAdmin) return;
+    setEditingBundle(bundle);
+    setBundleModalOpen(true);
+  };
+
+  const handleSaveBundle = (savedBundle: PcBundle) => {
+    if (!isAdmin) return;
+    const idx = pcBundles.findIndex((b) => b.id === savedBundle.id);
+    if (idx >= 0) {
+      const updated = [...pcBundles];
+      updated[idx] = savedBundle;
+      setPcBundles(updated);
+      showToast('Paket rakit PC berhasil diperbarui!');
+    } else {
+      setPcBundles([...pcBundles, savedBundle]);
+      showToast('Paket rakit PC baru berhasil ditambahkan!');
+    }
+    setBundleModalOpen(false);
+  };
+
+  const promptDeleteBundle = (bundle: PcBundle) => {
+    if (!isAdmin) return;
+    setDeleteModalState({
+      isOpen: true,
+      itemTitle: bundle.name,
+      itemType: 'bundle',
+      itemId: bundle.id,
+    });
+  };
+
+  // === CRUD HANDLERS: KUPON DISKON (Hanya Admin) ===
+  const handleOpenAddCoupon = () => {
+    if (!isAdmin) return;
+    setEditingCoupon(null);
+    setCouponModalOpen(true);
+  };
+
+  const handleOpenEditCoupon = (coupon: PromoCoupon) => {
+    if (!isAdmin) return;
+    setEditingCoupon(coupon);
+    setCouponModalOpen(true);
+  };
+
+  const handleSaveCoupon = (savedCoupon: PromoCoupon) => {
+    if (!isAdmin) return;
+    const idx = coupons.findIndex(
+      (c) => (c.id && savedCoupon.id && c.id === savedCoupon.id) || c.code === savedCoupon.code
+    );
+    if (idx >= 0) {
+      const updated = [...coupons];
+      updated[idx] = savedCoupon;
+      setCoupons(updated);
+      showToast('Kupon diskon berhasil diperbarui!');
+    } else {
+      setCoupons([...coupons, savedCoupon]);
+      showToast('Kupon diskon baru berhasil ditambahkan!');
+    }
+    setCouponModalOpen(false);
+  };
+
+  const promptDeleteCoupon = (coupon: PromoCoupon) => {
+    if (!isAdmin) return;
+    setDeleteModalState({
+      isOpen: true,
+      itemTitle: `${coupon.code} - ${coupon.title}`,
+      itemType: 'coupon',
+      itemId: coupon.id || coupon.code,
+    });
+  };
+
+  // === DELETE CONFIRMATION HANDLER (Hanya Admin) ===
+  const handleConfirmDelete = () => {
+    if (!isAdmin) return;
+    const { itemType, itemId } = deleteModalState;
+    if (itemType === 'banner') {
+      const updated = promoSlides.filter((s) => String(s.id) !== String(itemId));
+      setPromoSlides(updated);
+      setActiveSlide((prev) => Math.min(prev, Math.max(0, updated.length - 1)));
+      showToast('Banner slide promo berhasil dihapus.');
+    } else if (itemType === 'bundle') {
+      setPcBundles(pcBundles.filter((b) => b.id !== itemId));
+      showToast('Paket rakit PC berhasil dihapus.');
+    } else if (itemType === 'coupon') {
+      setCoupons(coupons.filter((c) => (c.id ? c.id !== itemId : c.code !== itemId)));
+      showToast('Kupon diskon berhasil dihapus.');
+    }
+    setDeleteModalState({
+      isOpen: false,
+      itemTitle: '',
+      itemType: 'banner',
+      itemId: '',
+    });
+  };
+
+  // === RESET TO INITIAL DATA HANDLER (Hanya Admin) ===
+  const handleResetToDefault = () => {
+    if (!isAdmin) return;
+    if (
+      window.confirm(
+        'Apakah Anda yakin ingin mengembalikan seluruh Banner, Paket PC, dan Kupon ke setelan standar bawaan toko?'
+      )
+    ) {
+      setPromoSlides(INITIAL_PROMO_SLIDES);
+      setPcBundles(INITIAL_PC_BUNDLES);
+      setCoupons(INITIAL_COUPONS);
+      setActiveSlide(0);
+      showToast('Display promosi berhasil direset ke pengaturan bawaan!');
+    }
+  };
 
   const handleCopyCoupon = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -259,7 +543,7 @@ export default function PromoLanding({
             </a>
           </nav>
 
-          {/* Action Buttons: Tanya CS & Login Admin */}
+          {/* Action Buttons: Tanya CS, Mode Kelola Promosi & Login Admin */}
           <div className="flex items-center gap-2">
             <a
               href={waLink}
@@ -271,19 +555,127 @@ export default function PromoLanding({
               <span>Tanya CS</span>
             </a>
 
-            {/* Login Admin (Only Admin is permitted) */}
-            <button
-              id="btn-promo-login-admin"
-              onClick={() => handleRoleLogin('Admin')}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-mono font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all cursor-pointer"
-              title="Login Administrator (Akses Penuh)"
-            >
-              <Shield className="w-4 h-4 text-slate-950 shrink-0" />
-              <span>Login Admin</span>
-            </button>
+            {/* Tombol Toggle Mode Kelola Promosi (Editor Display) - Hanya tampil bila user adalah Admin */}
+            {isAdmin && (
+              <button
+                id="btn-toggle-manage-promo"
+                onClick={() => setIsEditMode(!isEditMode)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isEditMode
+                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30 ring-2 ring-amber-400/50'
+                    : 'bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 border border-cyan-700/80 hover:border-cyan-500'
+                }`}
+                title={isEditMode ? 'Tutup mode edit & kembali ke tampilan normal' : 'Aktifkan mode edit banner, paket PC, dan kupon (Admin Only)'}
+              >
+                {isEditMode ? (
+                  <>
+                    <Eye className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Lihat Display</span>
+                  </>
+                ) : (
+                  <>
+                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Kelola Promosi</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Login Admin / POS Action */}
+            {currentUser ? (
+              <button
+                id="btn-promo-go-pos"
+                onClick={onEnterPos}
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <Monitor className="w-3.5 h-3.5" />
+                <span>Buka POS ({currentUser.fullName || currentUser.username})</span>
+              </button>
+            ) : (
+              <button
+                id="btn-promo-login-admin"
+                onClick={() => handleRoleLogin('Admin')}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-mono font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all cursor-pointer"
+                title="Login Administrator (Akses Penuh)"
+              >
+                <Shield className="w-4 h-4 text-slate-950 shrink-0" />
+                <span>Login Admin</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
+
+      {/* STICKY ADMIN MANAGEMENT TOOLBAR (MUNCUL KETIKA MODE KELOLA AKTIF) */}
+      {isEditMode && (
+        <div className="sticky top-[61px] z-30 bg-slate-900/98 backdrop-blur-md border-b-2 border-cyan-500 px-4 sm:px-6 py-2.5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-3 w-3 relative shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-black text-amber-400 tracking-wide uppercase">
+                    Mode Kelola Display Promosi Aktif
+                  </span>
+                  <span className="text-[10px] bg-amber-400/20 text-amber-300 font-mono font-bold px-1.5 py-0.5 rounded border border-amber-400/30">
+                    ADMIN
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-300">
+                  Gunakan tombol di bawah untuk menambah atau merubah banner, kupon, dan paket PC:
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+              <button
+                onClick={handleOpenAddSlide}
+                className="px-3 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm shadow-cyan-400/20"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Banner Slide</span>
+              </button>
+
+              <button
+                onClick={handleOpenAddCoupon}
+                className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm shadow-amber-400/20"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Kupon Diskon</span>
+              </button>
+
+              <button
+                onClick={handleOpenAddBundle}
+                className="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Paket PC</span>
+              </button>
+
+              <button
+                onClick={handleResetToDefault}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1 border border-slate-700 transition-colors cursor-pointer"
+                title="Reset ke data bawaan"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+
+              <button
+                onClick={() => setIsEditMode(false)}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 transition-colors cursor-pointer ml-1"
+                title="Tutup mode edit dan lihat tampilan pelanggan"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Selesai</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. HERO SHOWCASE CAROUSEL (Dinamis Banner Promo) */}
       <section id="promo-banner" className="relative px-4 sm:px-6 pt-6 pb-4 max-w-7xl mx-auto">
@@ -299,6 +691,40 @@ export default function PromoLanding({
             />
             <div className="absolute inset-0 bg-linear-to-r from-[#070A12] via-[#070A12]/90 to-transparent" />
             <div className="absolute inset-0 bg-linear-to-t from-[#070A12] via-transparent to-black/30" />
+
+            {/* EDIT MODE CONTROLS: OVERLAY ON ACTIVE BANNER */}
+            {isEditMode && promoSlides[activeSlide] && (
+              <div className="absolute top-4 right-4 z-30 flex flex-wrap items-center gap-2 bg-slate-950/95 border border-cyan-500/70 p-2 rounded-xl backdrop-blur-md shadow-2xl">
+                <span className="text-[10px] font-mono text-cyan-400 font-bold px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800">
+                  Banner {activeSlide + 1} / {promoSlides.length}
+                </span>
+                <button
+                  onClick={() => handleOpenEditSlide(promoSlides[activeSlide])}
+                  className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                  title="Ubah teks, gambar, & diskon slide ini"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Banner Ini</span>
+                </button>
+                <button
+                  onClick={() => promptDeleteSlide(promoSlides[activeSlide])}
+                  disabled={promoSlides.length <= 1}
+                  className="px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white font-mono font-bold text-xs flex items-center gap-1 transition-all cursor-pointer"
+                  title="Hapus banner slide ini"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Hapus</span>
+                </button>
+                <button
+                  onClick={handleOpenAddSlide}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-mono font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Tambah banner baru"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Banner Baru</span>
+                </button>
+              </div>
+            )}
 
             {/* Slide Content */}
             {promoSlides[activeSlide] && (
@@ -394,9 +820,20 @@ export default function PromoLanding({
               Salin kode voucher di bawah dan tunjukkan ke kasir saat pembayaran untuk klaim potongan harga.
             </p>
           </div>
-          <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-2 py-1 rounded-md self-start sm:self-auto">
-            Berlaku Hari Ini di Kasir
-          </span>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {isEditMode && (
+              <button
+                onClick={handleOpenAddCoupon}
+                className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Tambah Kupon</span>
+              </button>
+            )}
+            <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-800 px-2 py-1 rounded-md">
+              Berlaku Hari Ini di Kasir
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
@@ -407,8 +844,34 @@ export default function PromoLanding({
                 key={coupon.code}
                 className="relative rounded-xl bg-linear-to-b from-slate-900 to-slate-950 border border-slate-800 p-4 hover:border-cyan-500/50 transition-all flex flex-col justify-between group shadow-md"
               >
+                {/* Edit Mode Buttons on Coupon */}
+                {isEditMode && (
+                  <div className="absolute top-2.5 right-2.5 flex items-center gap-1 z-10 bg-slate-950/90 p-1 rounded-lg border border-slate-700">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditCoupon(coupon);
+                      }}
+                      className="p-1 rounded hover:bg-amber-400 hover:text-slate-950 text-amber-400 transition-colors cursor-pointer"
+                      title="Edit kupon ini"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        promptDeleteCoupon(coupon);
+                      }}
+                      className="p-1 rounded hover:bg-red-500 hover:text-white text-red-400 transition-colors cursor-pointer"
+                      title="Hapus kupon ini"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pr-14">
                     <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
                       {coupon.tag}
                     </span>
@@ -449,6 +912,26 @@ export default function PromoLanding({
               </div>
             );
           })}
+
+          {/* Interactive Card: Tambah Kupon Baru (Muncul saat Mode Kelola Aktif) */}
+          {isEditMode && (
+            <button
+              onClick={handleOpenAddCoupon}
+              className="rounded-xl border-2 border-dashed border-amber-500/50 hover:border-amber-400 bg-amber-500/5 hover:bg-amber-500/10 p-6 flex flex-col items-center justify-center text-center gap-2.5 group transition-all cursor-pointer min-h-[160px]"
+            >
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Plus className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-xs text-amber-300 font-mono block">
+                  + Tambah Kupon Baru
+                </span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  Atur kode diskon dan nominal potongan
+                </span>
+              </div>
+            </button>
+          )}
         </div>
       </section>
 
@@ -475,6 +958,15 @@ export default function PromoLanding({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+              {isEditMode && (
+                <button
+                  onClick={handleOpenAddBundle}
+                  className="px-3.5 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 text-xs font-black font-mono flex items-center gap-1.5 transition-colors shadow-lg shadow-blue-500/20 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Tambah Paket PC</span>
+                </button>
+              )}
               <a
                 href={waLink}
                 target="_blank"
@@ -497,8 +989,35 @@ export default function PromoLanding({
                     : 'bg-slate-900/60 border border-slate-800 hover:border-slate-700'
                 }`}
               >
+                {/* Edit Mode Buttons on Bundle Card */}
+                {isEditMode && (
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10 bg-slate-950/95 p-1 rounded-lg border border-slate-700 shadow-xl">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditBundle(bundle);
+                      }}
+                      className="px-2 py-1 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold font-mono text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Edit spesifikasi atau harga paket ini"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        promptDeleteBundle(bundle);
+                      }}
+                      className="p-1 rounded bg-red-600 hover:bg-red-500 text-white transition-colors cursor-pointer"
+                      title="Hapus paket ini"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
                 {/* Top Badge */}
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 pr-24">
                   <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                     {bundle.category}
                   </span>
@@ -566,6 +1085,26 @@ export default function PromoLanding({
                 </div>
               </div>
             ))}
+
+            {/* Interactive Card: Tambah Paket PC Baru (Muncul saat Mode Kelola Aktif) */}
+            {isEditMode && (
+              <button
+                onClick={handleOpenAddBundle}
+                className="rounded-xl border-2 border-dashed border-blue-500/50 hover:border-blue-400 bg-blue-500/5 hover:bg-blue-500/10 p-8 flex flex-col items-center justify-center text-center gap-3 group transition-all cursor-pointer min-h-[320px]"
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="font-bold text-sm text-blue-300 font-mono block">
+                    + Tambah Paket Rakit PC Baru
+                  </span>
+                  <span className="text-xs text-slate-400 block mt-1 max-w-xs">
+                    Tentukan nama paket, spesifikasi part, harga coret, dan harga promo
+                  </span>
+                </div>
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -911,6 +1450,60 @@ export default function PromoLanding({
           </div>
         </div>
       </div>
+
+      {/* TOAST ALERT NOTIFICATION */}
+      {toastAlert && (
+        <div className="fixed bottom-16 right-6 z-50 bg-emerald-500 text-slate-950 px-4 py-3 rounded-xl font-bold text-xs shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-slate-950 shrink-0" />
+          <span>{toastAlert}</span>
+        </div>
+      )}
+
+      {/* MODAL 1: SLIDE BANNER (ADD / EDIT) */}
+      <SlideModal
+        isOpen={slideModalOpen}
+        slide={editingSlide}
+        onClose={() => setSlideModalOpen(false)}
+        onSave={handleSaveSlide}
+      />
+
+      {/* MODAL 2: PAKET BUNDLING RAKIT PC (ADD / EDIT) */}
+      <BundleModal
+        isOpen={bundleModalOpen}
+        bundle={editingBundle}
+        onClose={() => setBundleModalOpen(false)}
+        onSave={handleSaveBundle}
+      />
+
+      {/* MODAL 3: KUPON DISKON (ADD / EDIT) */}
+      <CouponModal
+        isOpen={couponModalOpen}
+        coupon={editingCoupon}
+        onClose={() => setCouponModalOpen(false)}
+        onSave={handleSaveCoupon}
+      />
+
+      {/* MODAL 4: DELETE CONFIRMATION */}
+      <DeletePromoModal
+        isOpen={deleteModalState.isOpen}
+        itemType={
+          deleteModalState.itemType === 'banner'
+            ? 'Banner Slide'
+            : deleteModalState.itemType === 'bundle'
+            ? 'Paket PC'
+            : 'Kupon Diskon'
+        }
+        itemTitle={deleteModalState.itemTitle}
+        onClose={() =>
+          setDeleteModalState({
+            isOpen: false,
+            itemTitle: '',
+            itemType: 'banner',
+            itemId: '',
+          })
+        }
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

@@ -116,3 +116,7 @@ export const INITIAL_PC_BUNDLES: PcBundle[] = [
     isHot: false,
   },
 ];
+
+export const STORAGE_KEY_PROMO_SLIDES = 'hiroshi_pos_promo_slides';
+export const STORAGE_KEY_PC_BUNDLES = 'hiroshi_pos_pc_bundles';
+export const STORAGE_KEY_COUPONS = 'hiroshi_pos_promo_coupons';

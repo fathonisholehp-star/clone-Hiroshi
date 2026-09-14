@@ -7,6 +7,7 @@ import {
   Code2,
   UserCheck,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { UserRole, StoreTheme } from '../types';
 
@@ -56,6 +57,12 @@ export default function Navbar({
       label: 'Laporan Penjualan',
       icon: BarChart3,
       roles: ['Admin', 'Kasir'],
+    },
+    {
+      id: 'promosi',
+      label: 'Kelola Promosi',
+      icon: Sparkles,
+      roles: ['Admin'],
     },
     {
       id: 'user',
@@ -203,6 +210,8 @@ export default function Navbar({
                   ? 'Absensi'
                   : tab.id === 'laporan'
                   ? 'Laporan'
+                  : tab.id === 'promosi'
+                  ? 'Promosi'
                   : tab.id === 'user'
                   ? 'User'
                   : tab.id === 'pengaturan'
