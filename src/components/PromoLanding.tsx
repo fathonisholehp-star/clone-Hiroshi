@@ -555,32 +555,6 @@ export default function PromoLanding({
               <span>Tanya CS</span>
             </a>
 
-            {/* Tombol Toggle Mode Kelola Promosi (Editor Display) - Hanya tampil bila user adalah Admin */}
-            {isAdmin && (
-              <button
-                id="btn-toggle-manage-promo"
-                onClick={() => setIsEditMode(!isEditMode)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isEditMode
-                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30 ring-2 ring-amber-400/50'
-                    : 'bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 border border-cyan-700/80 hover:border-cyan-500'
-                }`}
-                title={isEditMode ? 'Tutup mode edit & kembali ke tampilan normal' : 'Aktifkan mode edit banner, paket PC, dan kupon (Admin Only)'}
-              >
-                {isEditMode ? (
-                  <>
-                    <Eye className="w-3.5 h-3.5 text-slate-950" />
-                    <span>Lihat Display</span>
-                  </>
-                ) : (
-                  <>
-                    <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Kelola Promosi</span>
-                  </>
-                )}
-              </button>
-            )}
-
             {/* Login Admin / POS Action */}
             {currentUser ? (
               <button
@@ -588,8 +562,8 @@ export default function PromoLanding({
                 onClick={onEnterPos}
                 className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
               >
-                <Monitor className="w-3.5 h-3.5" />
-                <span>Buka POS ({currentUser.fullName || currentUser.username})</span>
+                <LogIn className="w-3.5 h-3.5" />
+                <span>LOGIN</span>
               </button>
             ) : (
               <button
