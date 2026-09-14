@@ -24,6 +24,7 @@ import {
   Category,
   AttendanceRecord,
   StoreSettings,
+  PaymentMethod,
 } from './types';
 import {
   INITIAL_PRODUCTS,
@@ -35,7 +36,7 @@ import {
   INITIAL_ATTENDANCE,
   INITIAL_STORE_SETTINGS,
 } from './data/initialData';
-import { generateLogId } from './utils/formatters';
+import { generateLogId, generateTrxId, formatCurrency, formatDateTime } from './utils/formatters';
 import {
   syncTransactionToSheets,
   syncServiceToSheets,
@@ -171,6 +172,59 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('hiroshi_store_settings', JSON.stringify(storeSettings));
   }, [storeSettings]);
+
+  // Sinkronisasi otomatis: pastikan semua servis dengan status Selesai / Diambil
+  // memiliki catatan transaksi di Laporan Keuangan (self-healing / backwards compatibility)
+  useEffect(() => {
+    const missingTrxServices = services.filter(
+      (s) =>
+        (s.status === 'Selesai' || s.status === 'Diambil') &&
+        !transactions.some(
+          (t) =>
+            (s.transactionId && t.id === s.transactionId) ||
+            t.serviceId === s.id ||
+            t.items.some((itm) => itm.productId === `SRV-${s.id}` || itm.serialNumber === s.id)
+        )
+    );
+
+    if (missingTrxServices.length > 0) {
+      const backfilledTrx: Transaction[] = missingTrxServices.map((s) => {
+        const cost =
+          s.finalCost !== undefined && s.finalCost >= 0
+            ? s.finalCost
+            : s.estimatedCost || 0;
+        const trxId = s.transactionId || generateTrxId();
+        return {
+          id: trxId,
+          date: s.finishDate || s.entryDate || formatDateTime(new Date()),
+          cashier: s.technician || 'Teknisi',
+          subtotal: cost,
+          discount: 0,
+          total: cost,
+          paymentMethod: s.paymentMethod || 'Tunai',
+          amountPaid: cost,
+          change: 0,
+          status: 'Sukses',
+          type: 'SERVICE',
+          serviceId: s.id,
+          notes: `Pelunasan Servis ${s.id} - ${s.customerName} (${s.device})`,
+          items: [
+            {
+              transactionId: trxId,
+              productId: `SRV-${s.id}`,
+              productName: `Jasa Servis IT: ${s.device} (${s.customerName})`,
+              qty: 1,
+              subtotal: cost,
+              serialNumber: s.id,
+              warranty: s.warranty || '30 Hari Garansi Servis',
+            },
+          ],
+        };
+      });
+
+      setTransactions((prev) => [...backfilledTrx, ...prev]);
+    }
+  }, [services]);
 
   // Show auto-dismissing toast
   const showToast = (msg: string) => {
@@ -404,16 +458,136 @@ export default function App() {
     showToast(`Produk ${productId} telah dihapus.`);
   };
 
+  // Helper to record/update financial transaction when service status is Selesai or Diambil
+  const recordServiceFinancialTransaction = (
+    order: ServiceOrder,
+    cost: number,
+    paymentMethod?: PaymentMethod
+  ): string => {
+    const now = new Date();
+    const dateFormatted = formatDateTime(now);
+    const method = paymentMethod || order.paymentMethod || 'Tunai';
+
+    // Periksa apakah transaksi untuk tiket servis ini sudah pernah dibuat
+    const existing = transactions.find(
+      (t) =>
+        (order.transactionId && t.id === order.transactionId) ||
+        t.serviceId === order.id ||
+        t.items.some((itm) => itm.productId === `SRV-${order.id}` || itm.serialNumber === order.id)
+    );
+
+    if (existing) {
+      const updatedTrx: Transaction = {
+        ...existing,
+        subtotal: cost,
+        total: cost,
+        amountPaid: cost,
+        status: 'Sukses',
+        paymentMethod: method,
+        items: existing.items.map((itm) =>
+          itm.productId === `SRV-${order.id}` || itm.serialNumber === order.id
+            ? { ...itm, subtotal: cost }
+            : itm
+        ),
+      };
+
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === existing.id ? updatedTrx : t))
+      );
+
+      // Sinkronkan ke Google Sheets jika URL aktif
+      if (
+        storeSettings.googleSheetsSettings?.webAppUrl &&
+        storeSettings.googleSheetsSettings.autoSyncTransactions !== false
+      ) {
+        syncTransactionToSheets(
+          storeSettings.googleSheetsSettings.webAppUrl,
+          updatedTrx
+        ).catch((err) => {
+          console.warn('[Google Sheets Sync] Update service trx failed:', err);
+        });
+      }
+
+      return existing.id;
+    } else {
+      // Buat transaksi pemasukan baru di Laporan Keuangan
+      const newTrxId = generateTrxId();
+      const newTrx: Transaction = {
+        id: newTrxId,
+        date: dateFormatted,
+        cashier: order.technician || currentUser.fullName,
+        subtotal: cost,
+        discount: 0,
+        total: cost,
+        paymentMethod: method,
+        amountPaid: cost,
+        change: 0,
+        status: 'Sukses',
+        type: 'SERVICE',
+        serviceId: order.id,
+        notes: `Pelunasan Servis ${order.id} - ${order.customerName} (${order.device})`,
+        items: [
+          {
+            transactionId: newTrxId,
+            productId: `SRV-${order.id}`,
+            productName: `Jasa Servis IT: ${order.device} (${order.customerName})`,
+            qty: 1,
+            subtotal: cost,
+            serialNumber: order.id,
+            warranty: order.warranty || '30 Hari Garansi Servis',
+          },
+        ],
+      };
+
+      setTransactions((prev) => [newTrx, ...prev]);
+
+      // Sinkronkan ke Google Sheets Transaksi jika URL aktif
+      if (
+        storeSettings.googleSheetsSettings?.webAppUrl &&
+        storeSettings.googleSheetsSettings.autoSyncTransactions !== false
+      ) {
+        syncTransactionToSheets(
+          storeSettings.googleSheetsSettings.webAppUrl,
+          newTrx
+        ).catch((err) => {
+          console.warn('[Google Sheets Sync] New service trx failed:', err);
+        });
+      }
+
+      return newTrxId;
+    }
+  };
+
   // Save Service Order
   const handleSaveService = (order: ServiceOrder, isNew: boolean) => {
+    let orderToSave = { ...order };
+
+    // Jika status service langsung Selesai atau Diambil saat disimpan/diedit
+    if (orderToSave.status === 'Selesai' || orderToSave.status === 'Diambil') {
+      const resolvedCost =
+        orderToSave.finalCost !== undefined && orderToSave.finalCost >= 0
+          ? orderToSave.finalCost
+          : orderToSave.estimatedCost || 0;
+      const linkedTrxId = recordServiceFinancialTransaction(
+        orderToSave,
+        resolvedCost,
+        orderToSave.paymentMethod
+      );
+      orderToSave.transactionId = linkedTrxId;
+      orderToSave.finalCost = resolvedCost;
+      if (!orderToSave.finishDate) {
+        orderToSave.finishDate = formatDateTime(new Date());
+      }
+    }
+
     if (isNew) {
-      setServices((prev) => [order, ...prev]);
-      showToast(`Tiket service ${order.id} untuk ${order.customerName} didaftarkan.`);
+      setServices((prev) => [orderToSave, ...prev]);
+      showToast(`Tiket service ${orderToSave.id} untuk ${orderToSave.customerName} didaftarkan.`);
     } else {
       setServices((prev) =>
-        prev.map((s) => (s.id === order.id ? order : s))
+        prev.map((s) => (s.id === orderToSave.id ? orderToSave : s))
       );
-      showToast(`Tiket service ${order.id} diperbarui.`);
+      showToast(`Tiket service ${orderToSave.id} diperbarui.`);
     }
 
     // Auto-sync servis ke Google Sheets
@@ -423,7 +597,7 @@ export default function App() {
     ) {
       syncServiceToSheets(
         storeSettings.googleSheetsSettings.webAppUrl,
-        order
+        orderToSave
       ).catch((err) => {
         console.warn('[Google Sheets Sync] Service order offline/pending:', err);
       });
@@ -435,33 +609,92 @@ export default function App() {
     serviceId: string,
     status: ServiceStatus,
     finalCost?: number,
-    diagnosis?: string
+    diagnosis?: string,
+    paymentMethod?: PaymentMethod
   ) => {
     const now = new Date();
-    const dateFormatted = `${now.getFullYear()}-${String(
-      now.getMonth() + 1
-    ).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(
-      now.getHours()
-    ).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const dateFormatted = formatDateTime(now);
+
+    const targetService = services.find((s) => s.id === serviceId);
+    if (!targetService) return;
+
+    const resolvedCost =
+      finalCost !== undefined && finalCost >= 0
+        ? finalCost
+        : targetService.finalCost !== undefined && targetService.finalCost >= 0
+        ? targetService.finalCost
+        : targetService.estimatedCost || 0;
+
+    let linkedTrxId = targetService.transactionId;
+
+    // KETIKA STATUS SELESAI ATAU DIAMBIL: Otomatis masuk ke Laporan Keuangan
+    if (status === 'Selesai' || status === 'Diambil') {
+      linkedTrxId = recordServiceFinancialTransaction(
+        { ...targetService, finalCost: resolvedCost },
+        resolvedCost,
+        paymentMethod
+      );
+    } else {
+      // Jika status diturunkan kembali (misal Pengecekan / Diproses)
+      // dan sebelumnya ada transaksi yang linked, ubah ke Void agar keuangan tetap akurat
+      if (targetService.transactionId) {
+        setTransactions((prev) =>
+          prev.map((t) =>
+            t.id === targetService.transactionId
+              ? {
+                  ...t,
+                  status: 'Void',
+                  notes: `[VOID] Status servis ${serviceId} dikembalikan ke ${status}`,
+                }
+              : t
+          )
+        );
+      }
+    }
+
+    const updatedService: ServiceOrder = {
+      ...targetService,
+      status,
+      finalCost: resolvedCost,
+      diagnosis: diagnosis !== undefined ? diagnosis : targetService.diagnosis,
+      completionDate:
+        status === 'Selesai' || status === 'Diambil'
+          ? dateFormatted
+          : targetService.completionDate,
+      finishDate:
+        status === 'Selesai' || status === 'Diambil'
+          ? dateFormatted
+          : targetService.finishDate,
+      transactionId: linkedTrxId,
+      paymentMethod: paymentMethod || targetService.paymentMethod,
+    };
 
     setServices((prev) =>
-      prev.map((s) => {
-        if (s.id === serviceId) {
-          return {
-            ...s,
-            status,
-            finalCost: finalCost !== undefined ? finalCost : s.finalCost,
-            diagnosis: diagnosis !== undefined ? diagnosis : s.diagnosis,
-            completionDate:
-              status === 'Selesai' || status === 'Diambil'
-                ? dateFormatted
-                : s.completionDate,
-          };
-        }
-        return s;
-      })
+      prev.map((s) => (s.id === serviceId ? updatedService : s))
     );
-    showToast(`Status tiket ${serviceId} berhasil diubah ke: ${status}`);
+
+    // Auto-sync order servis ke Google Sheets
+    if (
+      storeSettings.googleSheetsSettings?.webAppUrl &&
+      storeSettings.googleSheetsSettings.autoSyncServices !== false
+    ) {
+      syncServiceToSheets(
+        storeSettings.googleSheetsSettings.webAppUrl,
+        updatedService
+      ).catch((err) => {
+        console.warn('[Google Sheets Sync] Service status sync failed:', err);
+      });
+    }
+
+    if (status === 'Selesai' || status === 'Diambil') {
+      showToast(
+        `✅ Servis ${serviceId} Selesai! Tagihan ${formatCurrency(
+          resolvedCost
+        )} otomatis masuk ke Laporan Keuangan (${linkedTrxId || 'Tercatat'}).`
+      );
+    } else {
+      showToast(`Status tiket ${serviceId} berhasil diubah ke: ${status}`);
+    }
   };
 
   // Save or Edit User

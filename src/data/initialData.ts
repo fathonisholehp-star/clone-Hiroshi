@@ -163,7 +163,9 @@ export const INITIAL_SERVICES: ServiceOrder[] = [
     status: 'Selesai',
     technician: 'Budi Santoso',
     diagnosis: 'Konektor fleksibel LCD kendor dan korosi debu pin RAM',
-    sparepartsUsed: '-'
+    sparepartsUsed: '-',
+    transactionId: 'TRX-20260908-003',
+    paymentMethod: 'Tunai'
   },
   {
     id: 'SRV-003',
@@ -190,7 +192,9 @@ export const INITIAL_SERVICES: ServiceOrder[] = [
     status: 'Diambil',
     technician: 'Budi Santoso',
     diagnosis: 'Upgrade ke SSD NVMe 512GB + Kloning Windows 11',
-    sparepartsUsed: 'SSD 512GB + Caddy'
+    sparepartsUsed: 'SSD 512GB + Caddy',
+    transactionId: 'TRX-20260907-001',
+    paymentMethod: 'Transfer Bank'
   }
 ];
 
@@ -206,6 +210,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     amountPaid: 1050000,
     change: 0,
     status: 'Sukses',
+    type: 'RETAIL',
     items: [
       {
         transactionId: 'TRX-20260908-001',
@@ -229,6 +234,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     amountPaid: 8900000,
     change: 0,
     status: 'Sukses',
+    type: 'RETAIL',
     items: [
       {
         transactionId: 'TRX-20260908-002',
@@ -238,6 +244,58 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
         subtotal: 8950000,
         serialNumber: 'SN-ASUS-VB-883921',
         warranty: '2 Tahun Resmi ASUS'
+      }
+    ]
+  },
+  {
+    id: 'TRX-20260908-003',
+    date: '2026-09-08 16:00',
+    cashier: 'Budi Santoso',
+    subtotal: 400000,
+    discount: 0,
+    total: 400000,
+    paymentMethod: 'Tunai',
+    amountPaid: 400000,
+    change: 0,
+    status: 'Sukses',
+    type: 'SERVICE',
+    serviceId: 'SRV-002',
+    notes: 'Pelunasan Servis SRV-002 - Dewi Kartika (Laptop HP Pavilion 14)',
+    items: [
+      {
+        transactionId: 'TRX-20260908-003',
+        productId: 'SRV-002',
+        productName: 'Jasa Servis: Laptop HP Pavilion 14 (Dewi Kartika)',
+        qty: 1,
+        subtotal: 400000,
+        serialNumber: 'SRV-002',
+        warranty: '30 Hari Garansi Servis'
+      }
+    ]
+  },
+  {
+    id: 'TRX-20260907-001',
+    date: '2026-09-07 10:00',
+    cashier: 'Budi Santoso',
+    subtotal: 850000,
+    discount: 0,
+    total: 850000,
+    paymentMethod: 'Transfer Bank',
+    amountPaid: 850000,
+    change: 0,
+    status: 'Sukses',
+    type: 'SERVICE',
+    serviceId: 'SRV-004',
+    notes: 'Pelunasan Servis SRV-004 - Pak Hendra (PC All-in-One Dell Inspiron)',
+    items: [
+      {
+        transactionId: 'TRX-20260907-001',
+        productId: 'SRV-004',
+        productName: 'Jasa Servis & Upgrade: Dell Inspiron (Pak Hendra)',
+        qty: 1,
+        subtotal: 850000,
+        serialNumber: 'SRV-004',
+        warranty: '30 Hari Garansi Servis'
       }
     ]
   }

@@ -11,6 +11,11 @@ import {
   Layers,
   FileText,
   Sparkles,
+  Wrench,
+  ShoppingBag,
+  CheckCircle2,
+  Receipt,
+  Search,
 } from 'lucide-react';
 import { Transaction, StoreSettings, User } from '../types';
 import { formatCurrency, exportToCsv } from '../utils/formatters';
@@ -29,6 +34,8 @@ export default function ReportTab({
   currentUser,
 }: ReportTabProps) {
   const [filterPeriod, setFilterPeriod] = useState<'all' | 'today' | 'month'>('all');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'RETAIL' | 'SERVICE'>('ALL');
+  const [trxSearchQuery, setTrxSearchQuery] = useState('');
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   const now = new Date();
@@ -54,6 +61,12 @@ export default function ReportTab({
   const totalSubtotal = validTrx.reduce((sum, t) => sum + t.subtotal, 0);
   const totalDiscounts = validTrx.reduce((sum, t) => sum + t.discount, 0);
   const averageOrderValue = validTrx.length > 0 ? totalRevenue / validTrx.length : 0;
+
+  // Breakdown: Retail POS vs Jasa Servis IT
+  const retailTrx = validTrx.filter((t) => t.type !== 'SERVICE');
+  const serviceTrx = validTrx.filter((t) => t.type === 'SERVICE');
+  const retailRevenue = retailTrx.reduce((sum, t) => sum + t.total, 0);
+  const serviceRevenue = serviceTrx.reduce((sum, t) => sum + t.total, 0);
 
   // Breakdown by payment method
   const paymentBreakdown: Record<string, { count: number; total: number }> = {};
@@ -114,26 +127,30 @@ export default function ReportTab({
   const handleExportCSV = () => {
     const headers = [
       'ID_Transaksi',
+      'Tipe',
       'Tanggal',
-      'Kasir',
+      'Kasir_Teknisi',
+      'ID_Servis',
       'Subtotal',
       'Diskon',
       'Total',
       'Metode_Bayar',
       'Status',
-      'Jumlah_Item',
+      'Rincian_Item',
     ];
 
     const rows = filteredTrx.map((t) => [
       t.id,
+      t.type === 'SERVICE' ? 'Jasa Servis IT' : 'Penjualan Retail',
       t.date,
       t.cashier,
+      t.serviceId || '-',
       t.subtotal,
       t.discount,
       t.total,
       t.paymentMethod,
       t.status,
-      t.items.reduce((s, itm) => s + itm.qty, 0),
+      t.items.map((itm) => `${itm.productName} (${itm.qty}x)`).join('; '),
     ]);
 
     exportToCsv(
@@ -251,8 +268,19 @@ export default function ReportTab({
           <div className="text-xl sm:text-2xl font-black text-[#0D47A1]">
             {formatCurrency(totalRevenue)}
           </div>
-          <div className="text-[11px] text-gray-500 mt-1">
-            Diskon diberikan: {formatCurrency(totalDiscounts)}
+          <div className="text-[11px] mt-2 pt-2 border-t border-gray-100 space-y-1">
+            <div className="flex justify-between text-gray-600">
+              <span className="flex items-center gap-1">
+                <ShoppingBag className="w-3 h-3 text-blue-500" /> Retail:
+              </span>
+              <span className="font-semibold text-gray-800">{formatCurrency(retailRevenue)} ({retailTrx.length})</span>
+            </div>
+            <div className="flex justify-between text-emerald-700 font-medium">
+              <span className="flex items-center gap-1">
+                <Wrench className="w-3 h-3 text-emerald-600" /> Servis Selesai:
+              </span>
+              <span className="font-bold text-emerald-800">{formatCurrency(serviceRevenue)} ({serviceTrx.length})</span>
+            </div>
           </div>
         </div>
 
@@ -401,6 +429,194 @@ export default function ReportTab({
               })
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Rincian Transaksi Keuangan Lengkap (Retail & Jasa Servis) */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gray-50/60">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-blue-600" />
+            <div>
+              <h3 className="font-bold text-sm text-gray-900">
+                Buku Jurnal &amp; Rincian Transaksi Masuk
+              </h3>
+              <p className="text-xs text-gray-500">
+                Mencatat seluruh arus kas masuk dari penjualan kasir dan jasa service IT yang telah berstatus Selesai.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Type Filter */}
+            <div className="flex bg-gray-100 p-1 rounded-lg text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setTypeFilter('ALL')}
+                className={`px-2.5 py-1 rounded-md transition-all ${
+                  typeFilter === 'ALL'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Semua ({filteredTrx.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTypeFilter('RETAIL')}
+                className={`px-2.5 py-1 rounded-md transition-all ${
+                  typeFilter === 'RETAIL'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Retail POS ({filteredTrx.filter((t) => t.type !== 'SERVICE').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTypeFilter('SERVICE')}
+                className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${
+                  typeFilter === 'SERVICE'
+                    ? 'bg-white text-emerald-700 shadow-xs font-bold'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Wrench className="w-3 h-3 text-emerald-600" />
+                Servis Selesai ({filteredTrx.filter((t) => t.type === 'SERVICE').length})
+              </button>
+            </div>
+
+            {/* Search filter */}
+            <div className="relative flex-1 sm:w-48">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={trxSearchQuery}
+                onChange={(e) => setTrxSearchQuery(e.target.value)}
+                placeholder="Cari nota, servis, kasir..."
+                className="w-full text-xs pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs sm:text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-gray-600 font-bold border-b border-gray-200 text-[11px] uppercase tracking-wider">
+                <th className="py-2.5 px-3 text-center w-10">No</th>
+                <th className="py-2.5 px-3">ID Nota / Waktu</th>
+                <th className="py-2.5 px-3">Tipe &amp; Sumber</th>
+                <th className="py-2.5 px-3">Rincian Item / Perbaikan</th>
+                <th className="py-2.5 px-3">Kasir / Teknisi</th>
+                <th className="py-2.5 px-3 text-center">Metode</th>
+                <th className="py-2.5 px-3 text-right">Total Tagihan</th>
+                <th className="py-2.5 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredTrx
+                .filter((t) => {
+                  if (typeFilter === 'RETAIL' && t.type === 'SERVICE') return false;
+                  if (typeFilter === 'SERVICE' && t.type !== 'SERVICE') return false;
+                  if (trxSearchQuery.trim()) {
+                    const q = trxSearchQuery.toLowerCase();
+                    const matchId = t.id.toLowerCase().includes(q);
+                    const matchCashier = t.cashier.toLowerCase().includes(q);
+                    const matchServiceId = t.serviceId?.toLowerCase().includes(q);
+                    const matchNotes = t.notes?.toLowerCase().includes(q);
+                    const matchItem = t.items.some((i) => i.productName.toLowerCase().includes(q));
+                    return matchId || matchCashier || matchServiceId || matchNotes || matchItem;
+                  }
+                  return true;
+                })
+                .map((trx, idx) => {
+                  const isService = trx.type === 'SERVICE';
+                  return (
+                    <tr
+                      key={trx.id}
+                      className={`hover:bg-blue-50/20 transition-colors ${
+                        trx.status === 'Void' ? 'opacity-60 bg-red-50/20' : ''
+                      }`}
+                    >
+                      <td className="py-2.5 px-3 text-center text-gray-500 font-mono text-xs">
+                        {idx + 1}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-bold font-mono text-[#0D47A1] text-xs">
+                          {trx.id}
+                        </div>
+                        <div className="text-[11px] text-gray-500">{trx.date}</div>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        {isService ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <Wrench className="w-3 h-3 text-emerald-700 shrink-0" />
+                            <span>Jasa Servis</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">
+                            <ShoppingBag className="w-3 h-3 text-blue-600 shrink-0" />
+                            <span>Penjualan Kasir</span>
+                          </span>
+                        )}
+                        {trx.serviceId && (
+                          <div className="text-[10px] text-gray-500 font-mono mt-0.5">
+                            Tiket: {trx.serviceId}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-medium text-gray-900 line-clamp-1">
+                          {trx.items.map((i) => i.productName).join(', ')}
+                        </div>
+                        {trx.notes && (
+                          <div className="text-[11px] text-gray-500 italic mt-0.5 line-clamp-1">
+                            {trx.notes}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 font-medium text-gray-700 text-xs">
+                        {trx.cashier || '-'}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-block px-2 py-0.5 rounded-sm text-[11px] font-semibold bg-gray-100 text-gray-800">
+                          {trx.paymentMethod || 'Tunai'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <div className="font-bold text-[#0D47A1]">
+                          {formatCurrency(trx.total)}
+                        </div>
+                        {trx.discount > 0 && (
+                          <div className="text-[10px] text-red-500">
+                            Disc: {formatCurrency(trx.discount)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            trx.status === 'Sukses'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {trx.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              {filteredTrx.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-gray-400">
+                    Tidak ada transaksi tercatat pada periode ini.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

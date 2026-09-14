@@ -19,7 +19,7 @@ import {
   Package,
   ShieldCheck,
 } from 'lucide-react';
-import { ServiceOrder, ServiceStatus, User, StoreSettings } from '../types';
+import { ServiceOrder, ServiceStatus, User, StoreSettings, PaymentMethod } from '../types';
 import {
   formatCurrency,
   generateServiceId,
@@ -36,7 +36,8 @@ interface ServiceTabProps {
     serviceId: string,
     status: ServiceStatus,
     finalCost?: number,
-    diagnosis?: string
+    diagnosis?: string,
+    paymentMethod?: PaymentMethod
   ) => void;
 }
 
@@ -58,6 +59,7 @@ export default function ServiceTab({
   const [selectedStatus, setSelectedStatus] = useState<ServiceStatus>('Diproses');
   const [finalCostInput, setFinalCostInput] = useState<number>(0);
   const [diagnosisInput, setDiagnosisInput] = useState<string>('');
+  const [paymentMethodInput, setPaymentMethodInput] = useState<PaymentMethod>('Tunai');
 
   // Form State for new/edit service
   const [formData, setFormData] = useState<Partial<ServiceOrder>>({
@@ -157,8 +159,9 @@ export default function ServiceTab({
   const handleOpenStatusModal = (order: ServiceOrder) => {
     setStatusModalOrder(order);
     setSelectedStatus(order.status);
-    setFinalCostInput(order.finalCost || order.estimatedCost);
+    setFinalCostInput(order.finalCost !== undefined && order.finalCost >= 0 ? order.finalCost : order.estimatedCost || 0);
     setDiagnosisInput(order.diagnosis || '');
+    setPaymentMethodInput(order.paymentMethod || 'Tunai');
   };
 
   const handleSaveStatusModal = () => {
@@ -167,7 +170,8 @@ export default function ServiceTab({
       statusModalOrder.id,
       selectedStatus,
       finalCostInput,
-      diagnosisInput
+      diagnosisInput,
+      paymentMethodInput
     );
     setStatusModalOrder(null);
   };
@@ -317,10 +321,18 @@ export default function ServiceTab({
                     </div>
 
                     <div className="text-right">
-                      <div className="text-xs text-gray-500">Estimasi Biaya</div>
+                      <div className="text-xs text-gray-500">
+                        {order.status === 'Selesai' || order.status === 'Diambil' ? 'Biaya Akhir' : 'Estimasi Biaya'}
+                      </div>
                       <div className="text-sm font-bold text-gray-900">
                         {formatCurrency(order.finalCost || order.estimatedCost)}
                       </div>
+                      {(order.status === 'Selesai' || order.status === 'Diambil') && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-sm mt-0.5" title={order.transactionId ? `ID Transaksi: ${order.transactionId}` : 'Masuk ke Laporan Keuangan'}>
+                          <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                          Masuk Lap. Keuangan
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -690,6 +702,39 @@ export default function ServiceTab({
                   className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1E88E5] focus:outline-hidden font-bold"
                 />
               </div>
+
+              {(selectedStatus === 'Selesai' || selectedStatus === 'Diambil') && (
+                <div className="space-y-3 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-emerald-800 text-xs font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Otomatis Masuk Laporan Keuangan</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 leading-relaxed">
+                    Biaya perbaikan sebesar <strong>{formatCurrency(finalCostInput)}</strong> akan langsung dicatat ke buku kas & laporan keuangan sebagai pendapatan Jasa Servis saat disimpan.
+                  </p>
+                  <div>
+                    <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                      Metode Pembayaran Pelanggan:
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {(['Tunai', 'QRIS', 'Transfer', 'Debit'] as PaymentMethod[]).map((method) => (
+                        <button
+                          key={method}
+                          type="button"
+                          onClick={() => setPaymentMethodInput(method)}
+                          className={`py-1.5 px-2 rounded-md text-xs font-semibold border transition-all text-center ${
+                            paymentMethodInput === method
+                              ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                              : 'bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-100/50'
+                          }`}
+                        >
+                          {method}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-2">
                 <button

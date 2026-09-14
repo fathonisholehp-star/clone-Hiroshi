@@ -34,6 +34,7 @@ export interface CartItem {
 
 export type PaymentMethod = 'Tunai' | 'QRIS' | 'Transfer Bank' | 'Debit';
 export type TransactionStatus = 'Sukses' | 'Void';
+export type TransactionType = 'RETAIL' | 'SERVICE';
 
 export interface TransactionDetail {
   transactionId: string;
@@ -58,6 +59,8 @@ export interface Transaction {
   status: TransactionStatus;
   items: TransactionDetail[];
   notes?: string;
+  type?: TransactionType; // RETAIL (Penjualan Kasir) atau SERVICE (Jasa Servis Selesai)
+  serviceId?: string; // ID tiket service jika berasal dari penyelesaian service
 }
 
 export type ServiceStatus = 'Diterima' | 'Pengecekan' | 'Diproses' | 'Selesai' | 'Diambil';
@@ -66,6 +69,7 @@ export interface ServiceOrder {
   id: string; // ID_Service (e.g., "SRV-2026-001")
   entryDate: string; // Tanggal_Masuk
   finishDate?: string; // Tanggal_Selesai
+  completionDate?: string;
   customerName: string; // Nama_Pelanggan
   customerPhone: string; // No_WA / Telegram
   device: string; // Nama_Barang (Laptop ASUS TUF, PC Custom, dll)
@@ -79,6 +83,8 @@ export interface ServiceOrder {
   accessories?: string; // Kelengkapan (Charger, Tas, Box, dll)
   warranty?: string; // Garansi Service (e.g., "30 Hari")
   downPayment?: number; // DP / Uang Muka
+  transactionId?: string; // ID transaksi keuangan yang otomatis dibuat
+  paymentMethod?: PaymentMethod; // Metode bayar saat servis selesai/diambil
 }
 
 export type StockChangeType = 'MASUK' | 'KELUAR' | 'PENYESUAIAN' | 'PENJUALAN' | 'VOID_PENJUALAN';
